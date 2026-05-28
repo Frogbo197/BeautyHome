@@ -14,15 +14,13 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         git \
         libonig-dev \
-        libpq-dev \
         libzip-dev \
         unzip \
         zip \
     && docker-php-ext-install \
         bcmath \
         mbstring \
-        pdo_pgsql \
-        pgsql \
+        pdo_mysql \
         zip \
     && a2enmod rewrite headers \
     && rm -rf /var/lib/apt/lists/*

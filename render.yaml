@@ -23,11 +23,17 @@ services:
       - key: LOG_LEVEL
         value: info
       - key: DB_CONNECTION
-        value: pgsql
-      - key: DB_URL
+        value: mysql
+      - key: DB_HOST
         sync: false
-      - key: DB_SSLMODE
-        value: require
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
       - key: SESSION_DRIVER
         value: database
       - key: CACHE_STORE
@@ -35,7 +41,7 @@ services:
       - key: QUEUE_CONNECTION
         value: database
       - key: RUN_MIGRATIONS
-        value: "true"
+        value: "false"
       - key: AI_CHAT_BASE_URL
         sync: false
       - key: AI_CHAT_MODEL
