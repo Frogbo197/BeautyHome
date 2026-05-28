@@ -128,10 +128,23 @@ class AuthController extends Controller
         }
 
         // CHECK PASSWORD
-        if (!Hash::check(
-            $request->password,
-            $user->MatKhauHash
-        )) {
+        $storedPassword = (string) ($user->MatKhauHash ?? '');
+        $passwordValid = false;
+        $rehashPassword = false;
+
+        try {
+            $passwordValid = Hash::check($request->password, $storedPassword);
+            $rehashPassword = $passwordValid && Hash::needsRehash($storedPassword);
+        } catch (\Throwable) {
+            $passwordValid = false;
+        }
+
+        if (!$passwordValid && hash_equals($storedPassword, (string) $request->password)) {
+            $passwordValid = true;
+            $rehashPassword = true;
+        }
+
+        if (!$passwordValid) {
 
             return response()->json([
 
@@ -142,12 +155,16 @@ class AuthController extends Controller
         }
 
         // UPDATE LOGIN TIME
+        $loginUpdate = [
+            'LanDangNhapCuoi' => now(),
+        ];
+        if ($rehashPassword) {
+            $loginUpdate['MatKhauHash'] = Hash::make($request->password);
+        }
+
         DB::table('taikhoan')
             ->where('ID', $user->ID)
-            ->update([
-
-                'LanDangNhapCuoi' => now(),
-            ]);
+            ->update($loginUpdate);
 
         // GET PROFILE
         $profile = DB::table('hosonguoidung')
