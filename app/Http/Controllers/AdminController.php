@@ -22,6 +22,7 @@ class AdminController extends Controller
             $today = now('Asia/Ho_Chi_Minh');
             $accountStats = $this->accountAggregateStats();
             $notificationStats = $this->notificationAggregateStats($today);
+            $alerts = $this->healthRiskAlerts();
 
             return [
                 'success' => true,
@@ -30,10 +31,12 @@ class AdminController extends Controller
                     ['label' => 'Tai khoan', 'value' => $accountStats['total'], 'note' => $accountStats['active'] . ' dang hoat dong', 'tone' => 'mint'],
                     ['label' => 'Tai khoan bi khoa', 'value' => $accountStats['locked'], 'note' => 'Co the mo lai tu bang nguoi dung', 'tone' => 'rose'],
                     ['label' => 'Thong bao', 'value' => $notificationStats['total'], 'note' => $notificationStats['unread'] . ' thong bao chua doc', 'tone' => 'lavender'],
+                    ['label' => 'Canh bao suc khoe', 'value' => count($alerts), 'note' => 'Can admin xem lai va gui nhac nho', 'tone' => count($alerts) ? 'rose' : 'mint'],
                     ['label' => 'Ho so suc khoe', 'value' => $this->countTable('hosonguoidung'), 'note' => $this->countTable('diemsuckhoe') . ' luot cham diem', 'tone' => 'sky'],
                 ],
                 'features' => $this->featureStats(),
                 'weekly' => $this->weeklyStats($today),
+                'alerts' => $alerts,
                 'notifications' => [
                     'total' => $notificationStats['total'],
                     'unread' => $notificationStats['unread'],
@@ -1139,6 +1142,181 @@ class AdminController extends Controller
                 'user' => $item->Ten ?: $item->Email ?: 'Không rõ',
             ])
             ->values();
+    }
+
+    private function healthRiskAlerts(): array
+    {
+        $alerts = [];
+        $today = now('Asia/Ho_Chi_Minh')->toDateString();
+
+        foreach ($this->weightRiskAlerts() as $alert) {
+            $alerts[] = $alert;
+        }
+        foreach ($this->medicineRiskAlerts($today) as $alert) {
+            $alerts[] = $alert;
+        }
+        foreach ($this->waterRiskAlerts($today) as $alert) {
+            $alerts[] = $alert;
+        }
+        foreach ($this->calorieRiskAlerts($today) as $alert) {
+            $alerts[] = $alert;
+        }
+
+        $rank = ['high' => 3, 'medium' => 2, 'low' => 1];
+        usort($alerts, fn ($a, $b) => ($rank[$b['severity']] ?? 0) <=> ($rank[$a['severity']] ?? 0));
+
+        return array_slice($alerts, 0, 12);
+    }
+
+    private function weightRiskAlerts(): array
+    {
+        if (!Schema::hasTable('chisosuckhoe') || !Schema::hasColumn('chisosuckhoe', 'CanNang')) {
+            return [];
+        }
+
+        return DB::table('chisosuckhoe')
+            ->whereNotNull('CanNang')
+            ->orderBy('NguoiDungID')
+            ->orderByDesc(Schema::hasColumn('chisosuckhoe', 'Ngay') ? 'Ngay' : 'ID')
+            ->orderByDesc('ID')
+            ->get(['ID', 'NguoiDungID', 'CanNang', Schema::hasColumn('chisosuckhoe', 'Ngay') ? 'Ngay' : DB::raw('NULL as Ngay')])
+            ->groupBy('NguoiDungID')
+            ->flatMap(function ($rows, $userId) {
+                $latest = $rows->first();
+                $previous = $rows->skip(1)->first();
+                if (!$latest || !$previous) {
+                    return [];
+                }
+                $delta = round((float) $latest->CanNang - (float) $previous->CanNang, 1);
+                if (abs($delta) < 3) {
+                    return [];
+                }
+
+                return [[
+                    'type' => 'CanNang',
+                    'severity' => abs($delta) >= 5 ? 'high' : 'medium',
+                    'user_id' => (int) $userId,
+                    'user' => $this->userDisplayName((int) $userId),
+                    'title' => 'Bien dong can nang nhanh',
+                    'message' => 'Can nang thay doi ' . ($delta > 0 ? '+' : '') . $delta . ' kg giua 2 lan ghi nhan gan nhat.',
+                    'action' => 'Kiem tra lai chi so va gui thong bao tu van cho nguoi dung.',
+                ]];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function medicineRiskAlerts(string $today): array
+    {
+        if (!Schema::hasTable('lichdungthuoc')) {
+            return [];
+        }
+
+        $query = DB::table('lichdungthuoc as l')
+            ->whereDate('l.ThoiGian', $today)
+            ->whereIn('l.TrangThai', ['DaUong', 'da_uong', 'Da uong']);
+
+        $hasMedicineTable = Schema::hasTable('thuoc');
+        if ($hasMedicineTable) {
+            $query->leftJoin('thuoc as t', 't.ID', '=', 'l.ThuocID');
+        }
+
+        $query->groupBy('l.NguoiDungID', 'l.ThuocID');
+        if ($hasMedicineTable) {
+            $query->groupBy('t.TenThuoc', 't.SoLanMoiNgay');
+        }
+
+        return $query
+            ->get([
+                'l.NguoiDungID',
+                'l.ThuocID',
+                DB::raw('COUNT(*) as total'),
+                $hasMedicineTable ? 't.TenThuoc' : DB::raw('NULL as TenThuoc'),
+                $hasMedicineTable ? 't.SoLanMoiNgay' : DB::raw('NULL as SoLanMoiNgay'),
+            ])
+            ->filter(function ($row) {
+                $limit = (int) ($row->SoLanMoiNgay ?? 0);
+                return (int) $row->total > max($limit, 4);
+            })
+            ->map(fn ($row) => [
+                'type' => 'Thuoc',
+                'severity' => 'high',
+                'user_id' => (int) $row->NguoiDungID,
+                'user' => $this->userDisplayName((int) $row->NguoiDungID),
+                'title' => 'Uong thuoc vuot khuyen cao',
+                'message' => ($row->TenThuoc ?: 'Thuoc #' . $row->ThuocID) . ' da duoc ghi nhan ' . (int) $row->total . ' lan trong ngay.',
+                'action' => 'Lien he nguoi dung va doi chieu lieu dung truoc khi tiep tuc.',
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function waterRiskAlerts(string $today): array
+    {
+        if (!Schema::hasTable('theodoinuoc')) {
+            return [];
+        }
+
+        return DB::table('theodoinuoc')
+            ->whereDate('Ngay', $today)
+            ->select('NguoiDungID')
+            ->selectRaw('SUM(LuongNuoc) as total_ml')
+            ->groupBy('NguoiDungID')
+            ->havingRaw('SUM(LuongNuoc) > 5000')
+            ->get()
+            ->map(fn ($row) => [
+                'type' => 'Nuoc',
+                'severity' => 'medium',
+                'user_id' => (int) $row->NguoiDungID,
+                'user' => $this->userDisplayName((int) $row->NguoiDungID),
+                'title' => 'Luong nuoc trong ngay cao bat thuong',
+                'message' => 'Tong nuoc hom nay: ' . (int) $row->total_ml . ' ml.',
+                'action' => 'Nhac nguoi dung kiem tra lai du lieu va uong theo nhu cau co the.',
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function calorieRiskAlerts(string $today): array
+    {
+        if (!Schema::hasTable('buaan')) {
+            return [];
+        }
+
+        return DB::table('buaan')
+            ->whereDate('Ngay', $today)
+            ->select('NguoiDungID')
+            ->selectRaw('SUM(TongCalories) as total_kcal')
+            ->groupBy('NguoiDungID')
+            ->havingRaw('SUM(TongCalories) > 4000 OR SUM(TongCalories) < 600')
+            ->get()
+            ->map(fn ($row) => [
+                'type' => 'DinhDuong',
+                'severity' => ((float) $row->total_kcal > 4000) ? 'medium' : 'low',
+                'user_id' => (int) $row->NguoiDungID,
+                'user' => $this->userDisplayName((int) $row->NguoiDungID),
+                'title' => 'Calo trong ngay bat thuong',
+                'message' => 'Tong calo hom nay: ' . (int) $row->total_kcal . ' kcal.',
+                'action' => 'Gui goi y dieu chinh bua an hoac kiem tra lai ghi nhan.',
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function userDisplayName(int $userId): string
+    {
+        if (Schema::hasTable('hosonguoidung')) {
+            $name = DB::table('hosonguoidung')->where('NguoiDungID', $userId)->value('Ten');
+            if ($name) {
+                return $name . ' (#' . $userId . ')';
+            }
+        }
+
+        $email = Schema::hasTable('taikhoan')
+            ? DB::table('taikhoan')->where('ID', $userId)->value('Email')
+            : null;
+
+        return ($email ?: 'Nguoi dung') . ' (#' . $userId . ')';
     }
 
     private function formatAccount($account, ?array $preloadedStats = null): array

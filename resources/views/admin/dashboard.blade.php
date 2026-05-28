@@ -392,6 +392,7 @@
                 <a href="#overview" class="active" data-view-link="overview"><span class="dot"></span>Tổng quan</a>
                 <a href="#accounts" data-view-link="accounts"><span class="dot" style="background: var(--rose-strong)"></span>Tài khoản</a>
                 <a href="#sendNotice" data-view-link="sendNotice"><span class="dot" style="background: var(--lavender-strong)"></span>Gửi thông báo</a>
+                <a href="#alerts" data-view-link="alerts"><span class="dot" style="background: var(--rose-strong)"></span>Canh bao</a>
                 <a href="#resources" data-view-link="resources"><span class="dot" style="background: var(--sky-strong)"></span>Dữ liệu</a>
             </nav>
         </aside>
@@ -489,6 +490,16 @@
             </section>
 
             <section class="grid layout" style="margin-top:16px">
+                <section class="card panel" id="alerts" data-view-panel="alerts" hidden>
+                    <div class="panel-head">
+                        <div>
+                            <h2>Canh bao suc khoe</h2>
+                            <div class="small">Tu dong ra soat can nang, thuoc, nuoc va calo bat thuong</div>
+                        </div>
+                    </div>
+                    <div id="alertList" class="notice-list"></div>
+                </section>
+
                 <section class="card panel" id="resources" data-view-panel="resources" hidden>
                     <div class="panel-head">
                         <div>
@@ -699,7 +710,7 @@
         }
 
         function showView(view) {
-            const safeView = ['overview', 'accounts', 'sendNotice', 'resources'].includes(view)
+            const safeView = ['overview', 'accounts', 'sendNotice', 'alerts', 'resources'].includes(view)
                 ? view
                 : 'overview';
 
@@ -781,6 +792,25 @@
                     </div>
                 </article>
             `).join('') : '<div class="empty">Chưa có thông báo nào.</div>';
+        }
+
+        function renderAlerts(items) {
+            const list = document.getElementById('alertList');
+            if (!list) return;
+            list.innerHTML = (items || []).length ? items.map(item => `
+                <article class="notice-item">
+                    <div class="notice-meta">
+                        <strong>${escapeHtml(item.title || 'Canh bao')}</strong>
+                        <span>${escapeHtml(item.severity || 'low')}</span>
+                    </div>
+                    <div>${escapeHtml(item.message || '')}</div>
+                    <div class="small">${escapeHtml(item.user || '')} · ${escapeHtml(item.type || '')}</div>
+                    <div class="small">${escapeHtml(item.action || '')}</div>
+                    <div class="actions" style="justify-content:flex-start;margin-top:8px">
+                        <button class="btn secondary small-btn" type="button" data-alert-notice="${item.user_id}" data-alert-message="${escapeHtml(item.message || '')}">Gui thong bao</button>
+                    </div>
+                </article>
+            `).join('') : '<div class="empty">Chua co canh bao bat thuong.</div>';
         }
 
         function renderWeekly(days) {
@@ -1033,6 +1063,7 @@
             renderOverview(data.overview || []);
             renderFeatures(data.features || []);
             renderNotifications(data.notifications || {});
+            renderAlerts(data.alerts || []);
             renderWeekly(data.weekly || []);
         }
 
@@ -1332,6 +1363,15 @@
             } catch (error) {
                 showToast(error.message);
             }
+        });
+
+        document.getElementById('alertList')?.addEventListener('click', event => {
+            const button = event.target.closest('[data-alert-notice]');
+            if (!button) return;
+            showView('sendNotice');
+            document.getElementById('noticeUserId').value = button.dataset.alertNotice || '';
+            document.getElementById('noticeType').value = 'HealthRisk';
+            document.getElementById('noticeContent').value = button.dataset.alertMessage || '';
         });
 
         showView(window.location.hash.replace('#', '') || 'overview');
