@@ -15,7 +15,9 @@ class UserGoalController extends Controller
             return response()->json(['success' => false, 'message' => 'Thiếu người dùng'], 422);
         }
 
-        if (Schema::hasTable('user_goals')) {
+        if (Schema::hasTable('muctieunguoidung')) {
+            $data = DB::table('muctieunguoidung')->where('NguoiDungID', $userId)->get();
+        } elseif (Schema::hasTable('user_goals')) {
             $data = DB::table('user_goals')->where('NguoiDungID', $userId)->get();
         } elseif (Schema::hasTable('muctieusuckhoe')) {
             $data = DB::table('muctieusuckhoe')->where('NguoiDungID', $userId)->get();
@@ -48,7 +50,34 @@ class UserGoalController extends Controller
         $type = $data['Loai'] ?? $data['LoaiMucTieu'] ?? 'TongQuat';
         $value = $data['GiaTri'] ?? $data['GiaTriMucTieu'] ?? null;
 
-        if (Schema::hasTable('user_goals')) {
+        if (Schema::hasTable('muctieunguoidung')) {
+            $payload = [
+                'GiaTri' => $value,
+                'DonVi' => $data['DonVi'] ?? $data['DonViDo'] ?? null,
+                'ChuKyLap' => $data['ChuKyLap'] ?? 'HangNgay',
+                'BatNhac' => array_key_exists('BatNhac', $data) ? (bool) $data['BatNhac'] : false,
+                'GioNhac' => $data['GioNhac'] ?? null,
+                'NgayTrongTuan' => $data['NgayTrongTuan'] ?? '1,2,3,4,5,6,7',
+                'NgayCapNhat' => now('Asia/Ho_Chi_Minh'),
+            ];
+            $goalExists = DB::table('muctieunguoidung')
+                ->where('NguoiDungID', $userId)
+                ->where('Loai', $type)
+                ->exists();
+            if (!$goalExists && Schema::hasColumn('muctieunguoidung', 'NgayTao')) {
+                $payload['NgayTao'] = now('Asia/Ho_Chi_Minh');
+            }
+
+            DB::table('muctieunguoidung')->updateOrInsert(
+                ['NguoiDungID' => $userId, 'Loai' => $type],
+                $payload
+            );
+
+            $saved = DB::table('muctieunguoidung')
+                ->where('NguoiDungID', $userId)
+                ->where('Loai', $type)
+                ->first();
+        } elseif (Schema::hasTable('user_goals')) {
             $payload = [
                 'GiaTri' => $value,
             ];
