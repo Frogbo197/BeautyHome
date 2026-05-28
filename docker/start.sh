@@ -3,6 +3,9 @@ set -euo pipefail
 
 export PORT="${PORT:-10000}"
 
+a2dismod mpm_event mpm_worker >/dev/null 2>&1 || true
+a2enmod mpm_prefork >/dev/null 2>&1 || true
+
 cat > /etc/apache2/ports.conf <<EOF
 Listen ${PORT}
 EOF

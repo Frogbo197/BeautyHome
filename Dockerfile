@@ -22,7 +22,8 @@ RUN apt-get update \
         mbstring \
         pdo_mysql \
         zip \
-    && a2enmod rewrite headers \
+    && a2dismod mpm_event mpm_worker || true \
+    && a2enmod mpm_prefork rewrite headers \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
