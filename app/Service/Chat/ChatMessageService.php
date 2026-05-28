@@ -23,6 +23,7 @@ class ChatMessageService
     private const MODE_EMOTIONAL = 'emotional';
     private const MODE_MOTIVATE = 'motivate';
     private const MODE_SUMMARY = 'summary';
+    private const MODE_CASUAL = 'casual';
 
     public function __construct(
         protected OpenRouterService $ai,
@@ -79,6 +80,19 @@ class ChatMessageService
 
             $command = $this->detectCommand($message);
             $mode = $this->detectMode($message, $command);
+
+            if ($mode === self::MODE_CASUAL) {
+                return $this->storeAndReturn(
+                    $userId,
+                    $sessionId,
+                    $rawMessage,
+                    $this->buildCasualReply($message, $ctx),
+                    $mode,
+                    $command,
+                    $ctx,
+                    'rule-casual'
+                );
+            }
 
             if (in_array($mode, [self::MODE_SUMMARY, self::MODE_NUTRITION, self::MODE_WORKOUT, self::MODE_MOTIVATE], true)) {
                 $reply = match ($mode) {
@@ -229,7 +243,14 @@ class ChatMessageService
     private function buildSystemPrompt(array $ctx, string $mode): string
     {
         return trim("
-Bạn là SaludAI, trợ lý sức khỏe tiếng Việt. Trả lời ngắn, rõ, dùng dữ liệu thật bên dưới, không tự bịa số liệu và không chẩn đoán bệnh.
+Bạn là SaludAI, trợ lý sức khỏe tiếng Việt. Trả lời ngắn, rõ, thân thiện, có duyên nhẹ. Dùng dữ liệu thật bên dưới, không tự bịa số liệu và không chẩn đoán bệnh.
+
+Phong cách:
+- Xưng 'mình' và gọi người dùng bằng tên khi phù hợp.
+- Nếu người dùng chào hỏi, tâm sự nhẹ, nói buồn/vui/chán, hoặc hỏi vu vơ, hãy phản hồi ấm áp, dí dỏm vừa phải, không lên lớp.
+- Nếu câu hỏi không thuộc sức khỏe, vẫn trả lời tự nhiên; chỉ kết nối nhẹ về sức khỏe nếu hợp ngữ cảnh.
+- Không bịa thời tiết, tin tức, giá cả hay dữ liệu thời gian thực. Nếu không có dữ liệu live, nói rằng mình chưa xem được và gợi ý cách kiểm tra.
+- Trả lời 1-4 câu, thân thiện như bạn đồng hành.
 
 Tên: {$ctx['ten']}
 BMI: {$ctx['bmi']} ({$ctx['bmi_label']})
@@ -248,6 +269,42 @@ Mode hiện tại: {$mode}
     private function buildSummaryReply(array $ctx): string
     {
         return "{$ctx['ten']} ơi, hôm nay bạn đã nạp khoảng {$ctx['calo_nap']} kcal và đốt khoảng {$ctx['calo_dot']} kcal. BMI hiện là {$ctx['bmi']} ({$ctx['bmi_label']}), protein khoảng {$ctx['protein']}g; nếu có thể, hãy ghi thêm bữa ăn, vận động và nước để mình gợi ý chính xác hơn nha.";
+    }
+
+    private function buildCasualReply(string $message, array $ctx): string
+    {
+        $name = trim((string) ($ctx['ten'] ?? 'bạn'));
+        $plain = $this->plainText($message);
+
+        if ($this->containsAny($plain, ['thoi tiet', 'troi hom nay', 'hom nay mua', 'hom nay nang'])) {
+            return "{$name} ơi, mình chưa xem được thời tiết trực tiếp trong máy bạn đâu. Nhưng bạn mở app thời tiết xem nhanh nhé; nếu trời mưa thì nhớ mang áo mưa, còn trời nắng thì nước lọc là “vật phẩm tăng lực” hôm nay đó.";
+        }
+
+        if ($this->containsAny($plain, ['xin chao', 'chao', 'hello', 'hi', 'helo', 'hey'])) {
+            return "Chào {$name} nha. SaludAI đã online, tinh thần là vừa chăm sức khỏe vừa tám chuyện nhẹ nhàng, hôm nay bạn muốn mình giúp gì nè?";
+        }
+
+        if ($this->containsAny($plain, ['toi buon', 'minh buon', 'em buon', 'dang buon', 'rat buon'])) {
+            return "{$name} ơi, buồn thì mình ngồi cạnh bạn một chút nha. Hít một hơi chậm, uống vài ngụm nước, rồi kể mình nghe chuyện gì làm mood tụt như pin 5% vậy?";
+        }
+
+        if ($this->containsAny($plain, ['toi chan', 'minh chan', 'em chan', 'chan qua', 'nham chan'])) {
+            return "Chán hả {$name}? Vậy mình đề xuất nhiệm vụ mini: đứng dậy đi 2 phút, uống nước, rồi quay lại than tiếp cũng được. Ít nhất cơ thể mình sẽ tưởng hôm nay rất có kế hoạch.";
+        }
+
+        if ($this->containsAny($plain, ['toi vui', 'minh vui', 'em vui', 'vui qua', 'rat vui'])) {
+            return "Ô vui là tốt quá {$name} ơi. Giữ mood này lại nha, kiểu bỏ vào hộp cơm tinh thần để chiều mở ra vẫn còn thơm.";
+        }
+
+        if ($this->containsAny($plain, ['met', 'u oai', 'uể oải', 'het nang luong', 'het pin'])) {
+            return "{$name} nghe có vẻ hơi hết pin rồi. Mình vote nghỉ mắt 3 phút, uống nước, rồi làm một việc nhỏ thôi; hôm nay không cần hóa siêu nhân, làm người bình thường ổn áp là được.";
+        }
+
+        if ($this->containsAny($plain, ['cam on', 'thank', 'thanks', 'tks'])) {
+            return "Không có gì nha {$name}. Mình ở đây để nhắc nhẹ, đỡ quên, và thỉnh thoảng pha trò cho app bớt giống bảng Excel biết nói.";
+        }
+
+        return "{$name} ơi, câu này ngoài vùng sức khỏe một chút nhưng mình vẫn nghe nè. Bạn kể thêm một câu nữa đi, mình sẽ trả lời kiểu thân thiện hơn bản hướng dẫn sử dụng máy giặt.";
     }
 
     private function buildNutritionReply(string $message, array $ctx): string
@@ -398,11 +455,25 @@ Mode hiện tại: {$mode}
         if ($this->isWorkoutIntent($message)) {
             return self::MODE_WORKOUT;
         }
+        if ($this->isCasualIntent($message)) {
+            return self::MODE_CASUAL;
+        }
         if ($this->containsAny($message, ['stress', 'buồn', 'mệt', 'căng thẳng', 'không ổn'])) {
             return self::MODE_EMOTIONAL;
         }
 
         return self::MODE_NORMAL;
+    }
+
+    private function isCasualIntent(string $message): bool
+    {
+        return $this->containsAny($message, [
+            'xin chao', 'chao', 'hello', 'hi', 'hey', 'cam on', 'thank', 'thanks',
+            'thoi tiet', 'troi hom nay', 'hom nay mua', 'hom nay nang',
+            'toi buon', 'minh buon', 'em buon', 'dang buon', 'toi vui', 'minh vui',
+            'em vui', 'toi chan', 'minh chan', 'em chan', 'chan qua',
+            'met', 'u oai', 'het pin', 'het nang luong', 'vu vo', 'tam chuyen',
+        ]);
     }
 
     private function detectMealSlot(string $message): string
