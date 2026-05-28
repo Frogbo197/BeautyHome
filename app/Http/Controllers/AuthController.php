@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Service\AuthTokenService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    public function __construct(private readonly AuthTokenService $tokens)
+    {
+    }
 
     // =====================================================
     // REGISTER
@@ -78,6 +83,8 @@ class AuthController extends Controller
             'message' => 'Đăng ký thành công',
 
             'user_id' => $userId,
+
+            'token' => $this->tokens->issue((int) $userId, $request->email),
         ]);
     }
 
@@ -153,6 +160,8 @@ class AuthController extends Controller
 
             'message' => 'Đăng nhập thành công',
 
+            'token' => $this->tokens->issue((int) $user->ID, $user->Email),
+
             'user' => [
 
                 'ID' => $user->ID,
@@ -181,7 +190,8 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'email' => 'required|email',
-            'password' => 'required|string|min:6|confirmed',
+            'reset_code' => 'nullable|string|size:6',
+            'password' => 'nullable|required_with:reset_code|string|min:6|confirmed',
         ]);
 
         $user = DB::table('taikhoan')
@@ -190,9 +200,36 @@ class AuthController extends Controller
 
         if (!$user) {
             return response()->json([
+                'success' => true,
+                'message' => 'Nếu email tồn tại, mã đặt lại mật khẩu đã được tạo.',
+            ]);
+        }
+
+        $cacheKey = 'password_reset:' . strtolower($data['email']);
+
+        if (empty($data['reset_code'])) {
+            $code = (string) random_int(100000, 999999);
+            Cache::put($cacheKey, Hash::make($code), now()->addMinutes(10));
+
+            $response = [
+                'success' => true,
+                'message' => 'Mã đặt lại mật khẩu có hiệu lực trong 10 phút.',
+                'requires_code' => true,
+            ];
+
+            if (app()->environment('local')) {
+                $response['debug_reset_code'] = $code;
+            }
+
+            return response()->json($response);
+        }
+
+        $storedHash = Cache::get($cacheKey);
+        if (!$storedHash || !Hash::check($data['reset_code'], $storedHash)) {
+            return response()->json([
                 'success' => false,
-                'message' => 'Email khong ton tai',
-            ], 404);
+                'message' => 'Mã đặt lại mật khẩu không đúng hoặc đã hết hạn.',
+            ], 422);
         }
 
         DB::table('taikhoan')
@@ -200,10 +237,11 @@ class AuthController extends Controller
             ->update([
                 'MatKhauHash' => Hash::make($data['password']),
             ]);
+        Cache::forget($cacheKey);
 
         return response()->json([
             'success' => true,
-            'message' => 'Da cap nhat mat khau. Ban co the dang nhap lai.',
+            'message' => 'Đã cập nhật mật khẩu. Bạn có thể đăng nhập lại.',
         ]);
     }
 }

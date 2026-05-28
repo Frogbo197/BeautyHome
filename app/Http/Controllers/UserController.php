@@ -53,6 +53,14 @@ class UserController extends Controller
             ], 404);
         }
 
+        $authUserId = (int) $request->attributes->get('auth_user_id', 0);
+        if ($authUserId > 0 && (int) $user->ID !== $authUserId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không có quyền cập nhật hồ sơ người dùng này',
+            ], 403);
+        }
+
         $heightCm = $this->nullableFloat($data['chieu_cao'] ?? null);
         $weightKg = $this->nullableFloat($data['can_nang'] ?? null);
         $bmi = null;
@@ -273,6 +281,14 @@ class UserController extends Controller
             ], 404);
         }
 
+        $authUserId = (int) $request->attributes->get('auth_user_id', 0);
+        if ($authUserId > 0 && (int) $user->ID !== $authUserId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không có quyền cập nhật hồ sơ người dùng này',
+            ], 403);
+        }
+
         $heightCm = $this->nullableFloat($data['chieu_cao'] ?? null);
         $weightKg = $this->nullableFloat($data['can_nang'] ?? null);
         $bmi = null;
@@ -371,4 +387,3 @@ class UserController extends Controller
         return (float) $value;
     }
 }
-

@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: salud-ai-backend
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: APP_NAME
+        value: SaludAI
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: info
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: RUN_MIGRATIONS
+        value: "true"
+      - key: AI_CHAT_BASE_URL
+        sync: false
+      - key: AI_CHAT_MODEL
+        value: qwen2.5:3b
+      - key: AI_CHAT_TIMEOUT
+        value: "20"
+      - key: AI_CHAT_NUM_PREDICT
+        value: "180"

@@ -1,0 +1,83 @@
+flowchart TD
+    BD((Bat dau))
+    KT((Ket thuc))
+
+    subgraph ND["Nguoi dung"]
+        ND1[Mo man hinh muc tieu hoac dashboard]
+        ND2[Xem muc tieu hien tai]
+        ND3[Nhap thong tin muc tieu moi]
+        ND4[Gui yeu cau cap nhat muc tieu]
+        ND5[Xem muc tieu da cap nhat]
+    end
+
+    subgraph API["API Laravel"]
+        API1["GET /api/goals"]
+        API2{Co NguoiDungID?}
+        API3{Bang user_goals ton tai?}
+        API4[Lay muc tieu tu user_goals]
+        API5{Bang muctieusuckhoe ton tai?}
+        API6[Lay muc tieu tu muctieusuckhoe]
+        API7[Tra ve danh sach rong]
+
+        API8["POST /api/goals"]
+        API9[Validate du lieu]
+        API10[Chuan hoa userId, loai muc tieu, gia tri]
+        API11{Bang user_goals ton tai?}
+        API12["updateOrInsert user_goals theo NguoiDungID + Loai"]
+        API13{Bang muctieusuckhoe ton tai?}
+        API14["updateOrInsert muctieusuckhoe theo NguoiDungID + LoaiMucTieu"]
+        API15[Tra ve success, data, muc_tieu_ml]
+        API16[Tra ve loi thieu hoac sai du lieu]
+    end
+
+    subgraph DB["Co so du lieu"]
+        DB1[(user_goals)]
+        DB2[(muctieusuckhoe)]
+    end
+
+    subgraph SD["Cac chuc nang su dung muc tieu"]
+        SD1[Dashboard doc muc tieu nuoc]
+        SD2[Water stats tinh muc tieu nuoc]
+        SD3[Food stats tinh muc tieu calo]
+        SD4[Profile/onboarding luu danh sach muc tieu]
+    end
+
+    BD --> ND1 --> ND2 --> API1 --> API2
+    API2 -- Khong --> API16 --> KT
+    API2 -- Co --> API3
+    API3 -- Co --> API4 --> DB1 --> ND2
+    API3 -- Khong --> API5
+    API5 -- Co --> API6 --> DB2 --> ND2
+    API5 -- Khong --> API7 --> ND2
+
+    ND2 --> ND3 --> ND4 --> API8 --> API9
+    API9 -- Khong hop le --> API16 --> KT
+    API9 -- Hop le --> API10 --> API11
+    API11 -- Co --> API12 --> DB1 --> API15
+    API11 -- Khong --> API13
+    API13 -- Co --> API14 --> DB2 --> API15
+    API13 -- Khong --> API15
+
+    API15 --> ND5
+    ND5 --> SD1
+    ND5 --> SD2
+    ND5 --> SD3
+    ND5 --> SD4
+    SD1 --> KT
+    SD2 --> KT
+    SD3 --> KT
+    SD4 --> KT
+
+    classDef startEnd fill:#ffffff,stroke:#333,stroke-width:1.5px,color:#111;
+    classDef user fill:#eaf3ff,stroke:#4d7fb8,color:#111;
+    classDef api fill:#fff4cf,stroke:#bd9335,color:#111;
+    classDef db fill:#e9f7e7,stroke:#6aa75f,color:#111;
+    classDef use fill:#f2e8ff,stroke:#8a6bc5,color:#111;
+    classDef decision fill:#ffffff,stroke:#555,stroke-width:1.5px,color:#111;
+
+    class BD,KT startEnd;
+    class ND1,ND2,ND3,ND4,ND5 user;
+    class API1,API4,API6,API7,API8,API9,API10,API12,API14,API15,API16 api;
+    class API2,API3,API5,API11,API13 decision;
+    class DB1,DB2 db;
+    class SD1,SD2,SD3,SD4 use;

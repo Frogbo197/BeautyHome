@@ -37,24 +37,18 @@ Route::middleware('admin')->prefix('admin')->group(function () {
     Route::delete('/notifications/{id}', [AdminController::class, 'deleteNotification']);
 });
 
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/save-user', [UserController::class, 'saveUser']);
+
+Route::middleware('api.user')->group(function () {
 Route::post('/save-onboarding', [UserController::class, 'saveOnboarding']);
 Route::get('/users', [UserController::class, 'getUsers']);
 
 Route::get('/home/{id}', [HomeController::class, 'index']);
 Route::get('/dashboard/{userId}', [DashboardController::class, 'index']);
 Route::get('/profile/{userId}', [UserController::class, 'getProfile']);
-Route::post(
-    '/register',
-    [AuthController::class, 'register']
-);
-
-Route::post(
-    '/login',
-    [AuthController::class, 'login']
-);
-
-Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 
 Route::post(
     '/update-profile',
@@ -163,3 +157,4 @@ Route::delete(
 
 Route::get('/nuoc', [WaterController::class, 'getWaterByQuery']);
 Route::post('/nuoc', [WaterController::class, 'addWater']);
+});

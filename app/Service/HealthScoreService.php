@@ -7,6 +7,61 @@ use Illuminate\Support\Facades\DB;
 
 class HealthScoreService
 {
+    public function calculate(
+        float $bmi,
+        float $totalCalories,
+        float $totalActivityCalories,
+        int $age,
+        string $sex,
+        string $activityLevel
+    ): array {
+        $score = 100;
+
+        if ($bmi <= 0) {
+            $score -= 15;
+        } elseif ($bmi < 18.5) {
+            $score -= 20;
+        } elseif ($bmi > 29.9) {
+            $score -= 25;
+        } elseif ($bmi > 24.9) {
+            $score -= 12;
+        }
+
+        $balance = $totalCalories - $totalActivityCalories;
+        if ($totalCalories <= 0) {
+            $score -= 10;
+        } elseif (abs($balance) > 500) {
+            $score -= 12;
+        } elseif (abs($balance) > 300) {
+            $score -= 6;
+        }
+
+        if ($activityLevel === 'sedentary') {
+            $score -= 15;
+        } elseif ($activityLevel === 'moderate') {
+            $score -= 5;
+        }
+
+        if ($age >= 60) {
+            $score -= 5;
+        }
+
+        $score = max(0, min(100, $score));
+
+        return [
+            'score' => $score,
+            'status' => $this->statusForScore($score),
+            'input_snapshot' => [
+                'bmi' => $bmi,
+                'total_calories' => $totalCalories,
+                'total_activity_calories' => $totalActivityCalories,
+                'age' => $age,
+                'sex' => $sex,
+                'activity_level' => $activityLevel,
+            ],
+        ];
+    }
+
     public function calculateForUser(int $userId): array
     {
         $profile = DB::table('hosonguoidung')

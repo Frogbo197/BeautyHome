@@ -102,7 +102,7 @@ class DashboardController extends Controller
             $medicineTakenToday = DB::table('lichdungthuoc')
                 ->where('NguoiDungID', $userId)
                 ->whereDate('ThoiGian', $today)
-                ->whereIn('TrangThai', ['DaUong', 'da_uong', 'ÄÃ£ uá»‘ng', 'Da uong'])
+                ->whereIn('TrangThai', ['DaUong', 'da_uong', 'Đã uống', 'Da uong'])
                 ->count();
             if ($medicineTakenToday === 0) {
                 $medicineTakenToday = 0;
@@ -202,8 +202,8 @@ class DashboardController extends Controller
                         $todayTotals['CaloriesOut'],
 
                     'goal_status' =>
-                        $summary->TrangThaiHoanThanh
-                        ?? 'KhÃ´ng rÃµ'
+                    $summary->TrangThaiHoanThanh
+                        ?? 'Không rõ'
                 ],
 
                 'medicine_taken_today' =>

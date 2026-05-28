@@ -1,0 +1,110 @@
+flowchart LR
+    BD((Bat dau))
+    KT((Ket thuc))
+
+    subgraph KH["Khach / Nguoi dung"]
+        direction TB
+        KH1[Xem man hinh dang nhap / dang ky]
+        KH2{Da co tai khoan?}
+        KH3[Dang ky tai khoan]
+        KH4[Dang nhap]
+        KH5{Dang nhap thanh cong?}
+        KH6[Quen mat khau / nhap lai thong tin]
+        KH7[Cap nhat ho so va onboarding]
+        KH8[Ghi nhan du lieu hang ngay]
+        KH9[Chon chuc nang theo doi]
+        KH10[Xem dashboard, bieu do va lich su]
+        KH11[Chat voi tro ly AI]
+        KH12[Doc thong bao / nhac nho]
+    end
+
+    subgraph HT["He thong API Laravel"]
+        direction TB
+        HT1[Kiem tra email va mat khau]
+        HT2[Tao tai khoan]
+        HT3[Tao ho so nguoi dung mac dinh]
+        HT4[Luu ho so suc khoe, chi so, muc tieu]
+        HT5[Luu bua an va chi tiet mon an]
+        HT6[Luu luong nuoc uong]
+        HT7[Luu hoat dong luyen tap]
+        HT8[Luu lich dung thuoc]
+        HT9[Cap nhat tong hop suc khoe hang ngay]
+        HT10[Tinh BMI, calo vao, calo ra, nuoc uong]
+        HT11[Tao du lieu dashboard]
+        HT12[Luu lich su chat]
+        HT13[Ghi nhan va danh dau thong bao]
+    end
+
+    subgraph AI["AI / Dich vu phan tich"]
+        direction TB
+        AI1[Thu thap ngu canh suc khoe]
+        AI2[Tinh diem suc khoe]
+        AI3[Phan tich rui ro va tinh trang]
+        AI4[Tao goi y dinh duong]
+        AI5[Tao goi y luyen tap]
+        AI6[Phan hoi cau hoi chat]
+        AI7[Luu ket qua phan tich AI]
+    end
+
+    subgraph AD["Quan tri vien"]
+        direction TB
+        AD1[Dang nhap trang quan tri]
+        AD2[Xem thong ke he thong]
+        AD3[Quan ly tai khoan nguoi dung]
+        AD4[Khoa / mo khoa / dat lai mat khau]
+        AD5[Quan ly danh muc thuc pham]
+        AD6[Quan ly danh muc thuoc]
+        AD7[Tao va quan ly thong bao]
+    end
+
+    BD --> KH1 --> KH2
+    KH2 -- Chua co --> KH3 --> HT2 --> HT3 --> KH7
+    KH2 -- Da co --> KH4 --> HT1 --> KH5
+    KH5 -- Khong --> KH6 --> KH4
+    KH5 -- Co --> KH7
+
+    KH7 --> HT4 --> AI1 --> AI2 --> AI3 --> AI7
+    AI7 --> KH8 --> KH9
+
+    KH9 -->|An uong| HT5
+    KH9 -->|Nuoc uong| HT6
+    KH9 -->|Van dong| HT7
+    KH9 -->|Thuoc| HT8
+
+    HT5 --> HT9
+    HT6 --> HT9
+    HT7 --> HT9
+    HT8 --> HT9
+    HT9 --> HT10 --> AI1
+
+    AI2 --> AI4 --> HT11
+    AI2 --> AI5 --> HT11
+    HT10 --> HT11 --> KH10
+
+    KH11 --> HT12 --> AI6 --> HT12 --> KH11
+    KH12 --> HT13 --> KH10
+
+    AD1 --> AD2
+    AD2 --> AD3 --> AD4
+    AD2 --> AD5
+    AD2 --> AD6
+    AD2 --> AD7 --> HT13
+
+    KH10 --> KT
+    AD4 --> KT
+    AD5 --> KT
+    AD6 --> KT
+
+    classDef startEnd fill:#ffffff,stroke:#555,stroke-width:1.5px,color:#111;
+    classDef user fill:#eaf3ff,stroke:#6b94c9,color:#111;
+    classDef system fill:#fff2c4,stroke:#c8a846,color:#111;
+    classDef ai fill:#e7f6df,stroke:#76aa63,color:#111;
+    classDef admin fill:#f7ddeb,stroke:#c36a9b,color:#111;
+    classDef decision fill:#ffffff,stroke:#666,stroke-width:1.5px,color:#111;
+
+    class BD,KT startEnd;
+    class KH1,KH3,KH4,KH6,KH7,KH8,KH9,KH10,KH11,KH12 user;
+    class KH2,KH5 decision;
+    class HT1,HT2,HT3,HT4,HT5,HT6,HT7,HT8,HT9,HT10,HT11,HT12,HT13 system;
+    class AI1,AI2,AI3,AI4,AI5,AI6,AI7 ai;
+    class AD1,AD2,AD3,AD4,AD5,AD6,AD7 admin;

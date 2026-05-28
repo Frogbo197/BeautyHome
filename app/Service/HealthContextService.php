@@ -18,6 +18,9 @@ class HealthContextService
         $health = Schema::hasTable('hososuckhoe')
             ? DB::table('hososuckhoe')->where('NguoiDungID', $userId)->first()
             : null;
+        $preferences = Schema::hasTable('sothichnguoidung')
+            ? DB::table('sothichnguoidung')->where('NguoiDung', $userId)->first()
+            : null;
         $latestIndex = Schema::hasTable('chisosuckhoe')
             ? DB::table('chisosuckhoe')->where('NguoiDungID', $userId)->orderByDesc('ID')->first()
             : null;
@@ -73,8 +76,8 @@ class HealthContextService
             'nhom_mau' => $health->NhomMau ?? '',
             'benh_nen' => $health->BenhNen ?? '',
             'the_trang' => $health->TheTrang ?? '',
-            'muc_do_van_dong' => $health->MucDoVanDong ?? '',
-            'che_do_an' => $health->CheDoAn ?? '',
+            'muc_do_van_dong' => $preferences->MucDoVanDong ?? '',
+            'che_do_an' => $preferences->CheDoAn ?? '',
             'muc_tieu' => $this->goals($userId),
         ];
     }
