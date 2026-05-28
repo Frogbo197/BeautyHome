@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -94,6 +95,7 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
+        try {
 
         $request->validate([
 
@@ -201,6 +203,19 @@ class AuthController extends Controller
                     $profile->AnhDaiDien ?? '',
             ]
         ]);
+        } catch (\Throwable $exception) {
+            Log::error('Login failed with server error', [
+                'email' => $request->input('email'),
+                'message' => $exception->getMessage(),
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Loi may chu dang nhap: ' . $exception->getMessage(),
+            ], 500);
+        }
     }
 
     public function forgotPassword(Request $request)
