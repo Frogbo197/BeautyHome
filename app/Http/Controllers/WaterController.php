@@ -215,6 +215,14 @@ class WaterController extends Controller
 
     private function waterGoal(int $userId): int
     {
+        if (Schema::hasTable('muctieunguoidung')) {
+            $goal = DB::table('muctieunguoidung')
+                ->where('NguoiDungID', $userId)
+                ->whereIn('Loai', ['UongNuoc', 'Nuoc', 'Uong nuoc', 'water'])
+                ->latest('ID')
+                ->value('GiaTri');
+            if ($goal) return (int) $goal;
+        }
         if (Schema::hasTable('user_goals')) {
             $goal = DB::table('user_goals')
                 ->where('NguoiDungID', $userId)

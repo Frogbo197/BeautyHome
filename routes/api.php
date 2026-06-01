@@ -72,7 +72,9 @@ Route::get('/activity/stats', [ActivityController::class, 'stats']);
 Route::delete('/activity/{id}', [ActivityController::class, 'destroy']);
 
 Route::get('/goals', [UserGoalController::class, 'show']);
+Route::get('/goals/suggestions', [UserGoalController::class, 'suggestions']);
 Route::post('/goals', [UserGoalController::class, 'store']);
+Route::post('/goals/apply-suggestion', [UserGoalController::class, 'applySuggestion']);
 
 Route::get('/thucpham', [FoodController::class, 'index']);
 Route::post('/thucpham', [FoodController::class, 'store']);
