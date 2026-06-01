@@ -311,7 +311,7 @@ class ThuocController extends Controller
                 ->get();
         }
 
-        $items = $popular
+        $candidates = $popular
             ->filter(function ($item) use ($q, $group) {
                 $matchesQuery = $q === ''
                     || stripos($item['TenThuoc'], $q) !== false
@@ -322,6 +322,13 @@ class ThuocController extends Controller
             })
             ->concat($dbRows)
             ->unique(fn ($item) => strtolower((string) $this->valueOf($item, 'TenThuoc', '')))
+            ->values();
+
+        $strongMatches = $q !== '' && mb_strlen($q) >= 3
+            ? $candidates->filter(fn ($item) => $this->isStrongMedicineMatch($item, $q))->values()
+            : collect();
+
+        $items = ($strongMatches->isNotEmpty() ? $strongMatches : $candidates)
             ->sortBy(fn ($item) => $this->medicineSearchSortKey($item, $q))
             ->take($limit)
             ->values()
@@ -547,6 +554,17 @@ class ThuocController extends Controller
         }
 
         return sprintf('%03d-%s', $score, $name);
+    }
+
+    private function isStrongMedicineMatch($item, string $q): bool
+    {
+        $needle = mb_strtolower($q);
+        $name = mb_strtolower((string) $this->valueOf($item, 'TenThuoc', ''));
+        $active = mb_strtolower((string) $this->valueOf($item, 'HoatChat', ''));
+
+        return str_starts_with($name, $needle)
+            || str_starts_with($active, $needle)
+            || str_contains($active, ' ' . $needle);
     }
 
     private function chart($rows, Carbon $start, Carbon $end): array
