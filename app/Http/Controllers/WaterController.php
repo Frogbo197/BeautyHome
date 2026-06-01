@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Service\DailySummaryService;
+use App\Service\HealthRiskEngineService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -57,7 +58,7 @@ class WaterController extends Controller
         ]);
     }
 
-    public function addWater(Request $request, DailySummaryService $summaryService)
+    public function addWater(Request $request, DailySummaryService $summaryService, HealthRiskEngineService $riskEngine)
     {
         $data = $request->validate([
             'NguoiDungID' => 'required|integer|exists:taikhoan,ID',
@@ -90,6 +91,11 @@ class WaterController extends Controller
             $summaryService->refresh((int) $data['NguoiDungID'], $date);
         } catch (\Throwable $e) {
             // Legacy databases may not have summary tables yet; water is still saved.
+        }
+        try {
+            $riskEngine->evaluateAfterWater((int) $data['NguoiDungID'], $date, (int) $id);
+        } catch (\Throwable $e) {
+            // Risk checks must never block saving water logs.
         }
 
         $total = DB::table('theodoinuoc')

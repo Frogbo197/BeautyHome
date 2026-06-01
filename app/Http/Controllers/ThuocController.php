@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Service\HealthRiskEngineService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -93,12 +94,12 @@ class ThuocController extends Controller
         ]);
     }
 
-    public function danhDauDaUong($id)
+    public function danhDauDaUong($id, HealthRiskEngineService $riskEngine)
     {
-        return $this->capNhatTrangThai(new Request(['trangThai' => 'da_uong']), (int) $id);
+        return $this->capNhatTrangThai(new Request(['trangThai' => 'da_uong']), (int) $id, $riskEngine);
     }
 
-    public function capNhatTrangThai(Request $request, int $id)
+    public function capNhatTrangThai(Request $request, int $id, HealthRiskEngineService $riskEngine)
     {
         $data = $request->validate([
             'trangThai' => ['required', 'string', Rule::in(self::STATUSES)],
@@ -122,6 +123,14 @@ class ThuocController extends Controller
         }
 
         DB::table('lichdungthuoc')->where('ID', $id)->update($payload);
+        $row = DB::table('lichdungthuoc')->where('ID', $id)->first();
+        if ($row) {
+            try {
+                $riskEngine->evaluateAfterMedication((int) $row->NguoiDungID, substr((string) $row->ThoiGian, 0, 10), (int) $id);
+            } catch (\Throwable $e) {
+                // Risk checks must never block medication status updates.
+            }
+        }
 
         return response()->json([
             'success' => true,

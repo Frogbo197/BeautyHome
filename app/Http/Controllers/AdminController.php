@@ -663,6 +663,66 @@ class AdminController extends Controller
         return response()->json(['success' => true, 'message' => 'Da xoa thong bao']);
     }
 
+    public function riskEvents(Request $request)
+    {
+        if (!Schema::hasTable('risk_events')) {
+            return response()->json([
+                'success' => true,
+                'data' => [],
+                'meta' => ['total' => 0, 'current_page' => 1, 'per_page' => 20, 'last_page' => 1],
+            ]);
+        }
+
+        $perPage = min(max($request->integer('per_page', 20), 5), 80);
+        $query = DB::table('risk_events as r');
+        if (Schema::hasTable('taikhoan')) {
+            $query->leftJoin('taikhoan as t', 't.ID', '=', 'r.NguoiDungID');
+        }
+        if (Schema::hasTable('hosonguoidung')) {
+            $query->leftJoin('hosonguoidung as h', 'h.NguoiDungID', '=', 'r.NguoiDungID');
+        }
+        if ($request->filled('severity')) {
+            $query->where('r.Severity', $request->query('severity'));
+        }
+        if ($request->filled('status')) {
+            $query->where('r.Status', $request->query('status'));
+        }
+
+        $page = $query
+            ->orderByDesc('r.LastDetectedAt')
+            ->orderByDesc('r.ID')
+            ->paginate($perPage, [
+                'r.*',
+                Schema::hasTable('taikhoan') ? 't.Email' : DB::raw('NULL as Email'),
+                Schema::hasTable('hosonguoidung') ? 'h.Ten' : DB::raw('NULL as Ten'),
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => collect($page->items())->map(fn ($row) => [
+                'id' => (int) $row->ID,
+                'user_id' => (int) $row->NguoiDungID,
+                'user' => $row->Ten ?: $row->Email ?: ('Nguoi dung #' . $row->NguoiDungID),
+                'rule' => $row->RuleCode,
+                'category' => $row->Category,
+                'severity' => $row->Severity,
+                'score' => (int) $row->RiskScore,
+                'title' => $row->Title,
+                'message' => $row->Message,
+                'action' => $row->Action,
+                'status' => $row->Status,
+                'occurrence_count' => (int) $row->OccurrenceCount,
+                'last_detected_at' => $row->LastDetectedAt,
+            ])->values(),
+            'meta' => [
+                'total' => $page->total(),
+                'current_page' => $page->currentPage(),
+                'per_page' => $page->perPage(),
+                'last_page' => $page->lastPage(),
+            ],
+        ]);
+    }
+
     public function resources(Request $request)
     {
         $type = $request->query('type', 'foods');
@@ -1149,6 +1209,9 @@ class AdminController extends Controller
         $alerts = [];
         $today = now('Asia/Ho_Chi_Minh')->toDateString();
 
+        foreach ($this->riskEventAlerts() as $alert) {
+            $alerts[] = $alert;
+        }
         foreach ($this->weightRiskAlerts() as $alert) {
             $alerts[] = $alert;
         }
@@ -1166,6 +1229,49 @@ class AdminController extends Controller
         usort($alerts, fn ($a, $b) => ($rank[$b['severity']] ?? 0) <=> ($rank[$a['severity']] ?? 0));
 
         return array_slice($alerts, 0, 12);
+    }
+
+    private function riskEventAlerts(): array
+    {
+        if (!Schema::hasTable('risk_events')) {
+            return [];
+        }
+
+        $query = DB::table('risk_events as r')
+            ->where('r.VisibleToAdmin', 1)
+            ->where('r.Status', 'open')
+            ->orderByDesc('r.LastDetectedAt')
+            ->limit(20);
+        if (Schema::hasTable('taikhoan')) {
+            $query->leftJoin('taikhoan as t', 't.ID', '=', 'r.NguoiDungID');
+        }
+        if (Schema::hasTable('hosonguoidung')) {
+            $query->leftJoin('hosonguoidung as h', 'h.NguoiDungID', '=', 'r.NguoiDungID');
+        }
+
+        return $query->get([
+            'r.ID',
+            'r.NguoiDungID',
+            'r.Category',
+            'r.Severity',
+            'r.RiskScore',
+            'r.Title',
+            'r.Message',
+            'r.Action',
+            'r.LastDetectedAt',
+            Schema::hasTable('taikhoan') ? 't.Email' : DB::raw('NULL as Email'),
+            Schema::hasTable('hosonguoidung') ? 'h.Ten' : DB::raw('NULL as Ten'),
+        ])->map(fn ($row) => [
+            'type' => $row->Category,
+            'severity' => $row->Severity,
+            'score' => (int) $row->RiskScore,
+            'user_id' => (int) $row->NguoiDungID,
+            'user' => $row->Ten ?: $row->Email ?: ('Nguoi dung #' . $row->NguoiDungID),
+            'title' => $row->Title,
+            'message' => $row->Message,
+            'action' => $row->Action ?: 'Admin xem xet va gui thong bao ca nhan neu can.',
+            'time' => $row->LastDetectedAt,
+        ])->values()->all();
     }
 
     private function weightRiskAlerts(): array
@@ -1481,4 +1587,3 @@ class AdminController extends Controller
         return (int) DB::table($table)->sum($column);
     }
 }
-

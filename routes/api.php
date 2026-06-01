@@ -35,6 +35,7 @@ Route::middleware('admin')->prefix('admin')->group(function () {
     Route::post('/notifications', [AdminController::class, 'createNotification']);
     Route::put('/notifications/{id}/read', [AdminController::class, 'markNotificationRead']);
     Route::delete('/notifications/{id}', [AdminController::class, 'deleteNotification']);
+    Route::get('/risk-events', [AdminController::class, 'riskEvents']);
 });
 
 Route::post('/register', [AuthController::class, 'register']);

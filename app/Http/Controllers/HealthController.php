@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Service\OpenRouterService;
+use App\Service\HealthRiskEngineService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -283,7 +284,7 @@ class HealthController extends Controller
         ]);
     }
 
-    public function storeWeight(Request $request)
+    public function storeWeight(Request $request, HealthRiskEngineService $riskEngine)
     {
         $validated = $request->validate([
             'NguoiDungID' => 'required|integer|exists:taikhoan,ID',
@@ -320,7 +321,7 @@ class HealthController extends Controller
             $payload['HinhAnh'] = $validated['HinhAnh'];
         }
 
-        DB::table('chisosuckhoe')->insert(array_merge($payload, [
+        $insertId = DB::table('chisosuckhoe')->insertGetId(array_merge($payload, [
             'NguoiDungID' => $userId,
             'Ngay' => $date,
         ]));
@@ -329,6 +330,11 @@ class HealthController extends Controller
             DB::table('hosonguoidung')
                 ->where('NguoiDungID', $userId)
                 ->update(['CanNang' => $weight, 'NgayCapNhat' => now()]);
+        }
+        try {
+            $riskEngine->evaluateAfterWeight((int) $userId, (int) $insertId);
+        } catch (\Throwable $e) {
+            // Risk checks must never block saving weight.
         }
 
         $row = DB::table('chisosuckhoe')

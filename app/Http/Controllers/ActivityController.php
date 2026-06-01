@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Service\DailySummaryService;
+use App\Service\HealthRiskEngineService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -173,7 +174,7 @@ class ActivityController extends Controller
             ->get();
     }
 
-    public function store(Request $request, DailySummaryService $summaryService)
+    public function store(Request $request, DailySummaryService $summaryService, HealthRiskEngineService $riskEngine)
     {
         $validated = $request->validate([
             'NguoiDungID' => 'required_without:user_id|integer|exists:taikhoan,ID',
@@ -232,6 +233,11 @@ class ActivityController extends Controller
             } catch (\Throwable $e) {
                 // Legacy schema without activity_logs/daily summaries can still save the activity record.
             }
+            try {
+                $riskEngine->evaluateAfterActivity((int) $userId, $date, (int) $scheduleId);
+            } catch (\Throwable $e) {
+                // Risk checks must never block saving activity logs.
+            }
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -267,6 +273,11 @@ class ActivityController extends Controller
             $summaryService->refresh((int) $userId, $date);
         } catch (\Throwable $e) {
             // Activity is saved even if optional summary tables are missing or out of sync.
+        }
+        try {
+            $riskEngine->evaluateAfterActivity((int) $userId, $date, (int) $activity->ID);
+        } catch (\Throwable $e) {
+            // Risk checks must never block saving activity logs.
         }
 
         return response()->json([

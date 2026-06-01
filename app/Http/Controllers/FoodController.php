@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Service\DailySummaryService;
+use App\Service\HealthRiskEngineService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -119,7 +120,7 @@ class FoodController extends Controller
         return response()->json(['success' => true, 'data' => $data]);
     }
 
-    public function storeMeal(Request $request, DailySummaryService $summaryService)
+    public function storeMeal(Request $request, DailySummaryService $summaryService, HealthRiskEngineService $riskEngine)
     {
         $data = $request->validate([
             'NguoiDungID' => 'required_without:user_id|integer|exists:taikhoan,ID',
@@ -205,6 +206,11 @@ class FoodController extends Controller
             $summaryService->refresh((int) $userId, $date);
         } catch (\Throwable $e) {
             // Meal is saved even if optional summary tables are missing or out of sync.
+        }
+        try {
+            $riskEngine->evaluateAfterMeal((int) $userId, $date, (int) $mealId);
+        } catch (\Throwable $e) {
+            // Risk checks must never block saving meals.
         }
 
         return response()->json([
