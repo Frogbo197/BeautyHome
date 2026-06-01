@@ -115,6 +115,7 @@ Route::get(
 );
 
 Route::get('/thuoc/tim-kiem', [ThuocController::class, 'timKiemThuoc']);
+Route::get('/thuoc/danh-muc', [ThuocController::class, 'danhMucThuoc']);
 Route::get('/thuoc/bao-cao/{nguoiDungId}', [ThuocController::class, 'baoCao']);
 Route::put('/thuoc/{id}', [ThuocController::class, 'capNhatThuoc']);
 Route::put('/thuoc/{id}/trang-thai', [ThuocController::class, 'capNhatTrangThai']);

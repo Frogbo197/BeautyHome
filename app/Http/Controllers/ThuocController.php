@@ -287,39 +287,76 @@ class ThuocController extends Controller
     public function timKiemThuoc(Request $request)
     {
         $q = trim((string) $request->query('q', ''));
+        $group = trim((string) $request->query('nhom', $request->query('loai', '')));
         $limit = min(max((int) $request->query('limit', 10), 1), 30);
-        $popular = collect([
-            ['TenThuoc' => 'Paracetamol', 'NhomThuoc' => 'Thuoc giam dau', 'IconThuoc' => 'pill', 'DonVi' => 'mg', 'LieuLuong' => '500', 'GhiChu' => 'Uong sau an neu dau/sot'],
-            ['TenThuoc' => 'Vitamin C', 'NhomThuoc' => 'Vitamin', 'IconThuoc' => 'vitamin', 'DonVi' => 'mg', 'LieuLuong' => '500', 'GhiChu' => 'Uong sau bua sang'],
-            ['TenThuoc' => 'Amlodipine', 'NhomThuoc' => 'Thuoc huyet ap', 'IconThuoc' => 'heart', 'DonVi' => 'mg', 'LieuLuong' => '5', 'GhiChu' => 'Theo don bac si'],
-            ['TenThuoc' => 'Metformin', 'NhomThuoc' => 'Thuoc tieu duong', 'IconThuoc' => 'drop', 'DonVi' => 'mg', 'LieuLuong' => '500', 'GhiChu' => 'Uong cung bua an'],
-            ['TenThuoc' => 'Amoxicillin', 'NhomThuoc' => 'Khang sinh', 'IconThuoc' => 'shield', 'DonVi' => 'mg', 'LieuLuong' => '500', 'GhiChu' => 'Dung dung lieu theo don'],
-        ]);
+        $popular = collect($this->popularMedicineCatalog());
 
         $dbRows = collect();
         if (Schema::hasTable('thuoc')) {
             $dbRows = DB::table('thuoc')
-                ->when($q !== '', fn ($query) => $query->where('TenThuoc', 'like', "%{$q}%"))
+                ->when($q !== '', function ($query) use ($q) {
+                    $query->where(function ($inner) use ($q) {
+                        $inner->where('TenThuoc', 'like', "%{$q}%");
+                        if (Schema::hasColumn('thuoc', 'NhomThuoc')) {
+                            $inner->orWhere('NhomThuoc', 'like', "%{$q}%");
+                        }
+                        if (Schema::hasColumn('thuoc', 'HoatChat')) {
+                            $inner->orWhere('HoatChat', 'like', "%{$q}%");
+                        }
+                    });
+                })
+                ->when($group !== '' && Schema::hasColumn('thuoc', 'NhomThuoc'), fn ($query) => $query->where('NhomThuoc', 'like', "%{$group}%"))
                 ->select($this->medicineSelectColumns())
                 ->limit($limit)
                 ->get();
         }
 
-        $items = $dbRows
-            ->concat($popular->filter(fn ($item) => $q === '' || stripos($item['TenThuoc'], $q) !== false))
+        $items = $popular
+            ->filter(function ($item) use ($q, $group) {
+                $matchesQuery = $q === ''
+                    || stripos($item['TenThuoc'], $q) !== false
+                    || stripos($item['NhomThuoc'], $q) !== false
+                    || stripos($item['HoatChat'] ?? '', $q) !== false;
+                $matchesGroup = $group === '' || stripos($item['NhomThuoc'], $group) !== false;
+                return $matchesQuery && $matchesGroup;
+            })
+            ->concat($dbRows)
             ->unique(fn ($item) => strtolower((string) $this->valueOf($item, 'TenThuoc', '')))
+            ->sortBy(fn ($item) => $this->medicineSearchSortKey($item, $q))
             ->take($limit)
             ->values()
             ->map(fn ($item) => [
                 'TenThuoc' => $this->valueOf($item, 'TenThuoc', ''),
                 'LoaiThuoc' => $this->valueOf($item, 'NhomThuoc', 'Vien uong'),
+                'NhomThuoc' => $this->valueOf($item, 'NhomThuoc', 'Vien uong'),
+                'HoatChat' => $this->valueOf($item, 'HoatChat', ''),
                 'IconThuoc' => $this->valueOf($item, 'IconThuoc', 'pill'),
                 'DonVi' => $this->valueOf($item, 'DonVi', 'mg'),
                 'LieuLuong' => $this->valueOf($item, 'LieuLuong', ''),
                 'GhiChu' => $this->valueOf($item, 'GhiChu', ''),
+                'CanhBao' => $this->valueOf($item, 'CanhBao', ''),
+                'NguonThamKhao' => $this->valueOf($item, 'NguonThamKhao', 'Danh muc noi bo'),
             ]);
 
         return response()->json(['success' => true, 'data' => $items]);
+    }
+
+    public function danhMucThuoc()
+    {
+        $groups = collect($this->popularMedicineCatalog())
+            ->groupBy('NhomThuoc')
+            ->map(fn ($items, $name) => [
+                'ten_nhom' => $name,
+                'so_luong_goi_y' => $items->count(),
+                'vi_du' => $items->take(4)->pluck('TenThuoc')->values(),
+            ])
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Danh muc nay dung de goi y ten thuoc va nhom thuoc, khong thay the don thuoc cua bac si.',
+            'data' => $groups,
+        ]);
     }
 
     private function upsertMedicineMaster(array $data, string $time): int
@@ -472,12 +509,44 @@ class ThuocController extends Controller
     {
         return array_values(array_filter([
             'TenThuoc',
+            Schema::hasColumn('thuoc', 'HoatChat') ? 'HoatChat' : null,
             Schema::hasColumn('thuoc', 'NhomThuoc') ? 'NhomThuoc' : null,
             Schema::hasColumn('thuoc', 'IconThuoc') ? 'IconThuoc' : null,
             Schema::hasColumn('thuoc', 'DonVi') ? 'DonVi' : null,
             Schema::hasColumn('thuoc', 'LieuLuong') ? 'LieuLuong' : null,
             Schema::hasColumn('thuoc', 'GhiChu') ? 'GhiChu' : null,
+            Schema::hasColumn('thuoc', 'CanhBao') ? 'CanhBao' : null,
         ]));
+    }
+
+    private function popularMedicineCatalog(): array
+    {
+        return config('medicine_catalog.items', []);
+    }
+
+    private function medicineSearchSortKey($item, string $q): string
+    {
+        $name = mb_strtolower((string) $this->valueOf($item, 'TenThuoc', ''));
+        $active = mb_strtolower((string) $this->valueOf($item, 'HoatChat', ''));
+        $group = mb_strtolower((string) $this->valueOf($item, 'NhomThuoc', ''));
+        $needle = mb_strtolower($q);
+
+        $score = 50;
+        if ($needle !== '') {
+            if (str_starts_with($name, $needle)) {
+                $score = 0;
+            } elseif (str_contains($name, $needle)) {
+                $score = 10;
+            } elseif (str_starts_with($active, $needle)) {
+                $score = 20;
+            } elseif (str_contains($active, $needle)) {
+                $score = 30;
+            } elseif (str_contains($group, $needle)) {
+                $score = 40;
+            }
+        }
+
+        return sprintf('%03d-%s', $score, $name);
     }
 
     private function chart($rows, Carbon $start, Carbon $end): array
