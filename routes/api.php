@@ -73,6 +73,8 @@ Route::delete('/activity/{id}', [ActivityController::class, 'destroy']);
 
 Route::get('/goals', [UserGoalController::class, 'show']);
 Route::get('/goals/suggestions', [UserGoalController::class, 'suggestions']);
+Route::get('/goals/progress', [UserGoalController::class, 'progress']);
+Route::get('/goals/history', [UserGoalController::class, 'history']);
 Route::post('/goals', [UserGoalController::class, 'store']);
 Route::post('/goals/apply-suggestion', [UserGoalController::class, 'applySuggestion']);
 

@@ -47,27 +47,40 @@ class UserGoalController extends Controller
             'BatNhac' => 'nullable',
             'GioNhac' => 'nullable|string|max:20',
             'NgayTrongTuan' => 'nullable|string|max:50',
+            'NgayBatDau' => 'nullable|date',
+            'NgayKetThuc' => 'nullable|date|after_or_equal:NgayBatDau',
+            'TrangThai' => 'nullable|string|in:DangTheoDoi,HoanThanh,KhongDat,DaDieuChinh,TamDung',
+            'LyDo' => 'nullable|string|max:500',
+            'NguonThayDoi' => 'nullable|string|max:50',
         ]);
 
         $userId = $data['NguoiDungID'] ?? $data['user_id'];
         $type = $data['Loai'] ?? $data['LoaiMucTieu'] ?? 'TongQuat';
         $value = $data['GiaTri'] ?? $data['GiaTriMucTieu'] ?? null;
+        $startDate = $data['NgayBatDau'] ?? now('Asia/Ho_Chi_Minh')->toDateString();
+        $endDate = $data['NgayKetThuc'] ?? now('Asia/Ho_Chi_Minh')->addDays(6)->toDateString();
+        $status = $data['TrangThai'] ?? 'DangTheoDoi';
+        $reason = $data['LyDo'] ?? null;
+        $source = $data['NguonThayDoi'] ?? 'User';
 
         if (Schema::hasTable('muctieunguoidung')) {
-            $payload = [
+            $existing = DB::table('muctieunguoidung')
+                ->where('NguoiDungID', $userId)
+                ->where('Loai', $type)
+                ->first();
+            $payload = $this->onlyExistingColumns('muctieunguoidung', [
                 'GiaTri' => $value,
                 'DonVi' => $data['DonVi'] ?? $data['DonViDo'] ?? null,
                 'ChuKyLap' => $data['ChuKyLap'] ?? 'HangNgay',
                 'BatNhac' => array_key_exists('BatNhac', $data) ? (bool) $data['BatNhac'] : false,
                 'GioNhac' => $data['GioNhac'] ?? null,
                 'NgayTrongTuan' => $data['NgayTrongTuan'] ?? '1,2,3,4,5,6,7',
+                'NgayBatDau' => $startDate,
+                'NgayKetThuc' => $endDate,
+                'TrangThai' => $status,
                 'NgayCapNhat' => now('Asia/Ho_Chi_Minh'),
-            ];
-            $goalExists = DB::table('muctieunguoidung')
-                ->where('NguoiDungID', $userId)
-                ->where('Loai', $type)
-                ->exists();
-            if (!$goalExists && Schema::hasColumn('muctieunguoidung', 'NgayTao')) {
+            ]);
+            if (!$existing && Schema::hasColumn('muctieunguoidung', 'NgayTao')) {
                 $payload['NgayTao'] = now('Asia/Ho_Chi_Minh');
             }
 
@@ -80,7 +93,12 @@ class UserGoalController extends Controller
                 ->where('NguoiDungID', $userId)
                 ->where('Loai', $type)
                 ->first();
+            $this->recordGoalHistory($userId, $type, $existing, $saved, $source, $reason);
         } elseif (Schema::hasTable('user_goals')) {
+            $existing = DB::table('user_goals')
+                ->where('NguoiDungID', $userId)
+                ->where('Loai', $type)
+                ->first();
             $payload = [
                 'GiaTri' => $value,
             ];
@@ -90,17 +108,16 @@ class UserGoalController extends Controller
                 'BatNhac' => array_key_exists('BatNhac', $data) ? (bool) $data['BatNhac'] : null,
                 'GioNhac' => $data['GioNhac'] ?? null,
                 'NgayTrongTuan' => $data['NgayTrongTuan'] ?? null,
+                'NgayBatDau' => $startDate,
+                'NgayKetThuc' => $endDate,
+                'TrangThai' => $status,
                 'NgayCapNhat' => now('Asia/Ho_Chi_Minh'),
             ] as $column => $columnValue) {
                 if ($columnValue !== null && Schema::hasColumn('user_goals', $column)) {
                     $payload[$column] = $columnValue;
                 }
             }
-            $goalExists = DB::table('user_goals')
-                ->where('NguoiDungID', $userId)
-                ->where('Loai', $type)
-                ->exists();
-            if (!$goalExists && Schema::hasColumn('user_goals', 'NgayTao')) {
+            if (!$existing && Schema::hasColumn('user_goals', 'NgayTao')) {
                 $payload['NgayTao'] = now('Asia/Ho_Chi_Minh');
             }
 
@@ -113,22 +130,29 @@ class UserGoalController extends Controller
                 ->where('NguoiDungID', $userId)
                 ->where('Loai', $type)
                 ->first();
+            $this->recordGoalHistory($userId, $type, $existing, $saved, $source, $reason);
         } elseif (Schema::hasTable('muctieusuckhoe')) {
+            $existing = DB::table('muctieusuckhoe')
+                ->where('NguoiDungID', $userId)
+                ->where('LoaiMucTieu', $type)
+                ->first();
             DB::table('muctieusuckhoe')->updateOrInsert(
                 ['NguoiDungID' => $userId, 'LoaiMucTieu' => $type],
-                [
+                $this->onlyExistingColumns('muctieusuckhoe', [
                     'TenMucTieu' => $data['TenMucTieu'] ?? $type,
                     'GiaTriMucTieu' => $value,
-                    'NgayBatDau' => now('Asia/Ho_Chi_Minh')->toDateString(),
-                    'TrangThai' => 'DangThucHien',
+                    'NgayBatDau' => $startDate,
+                    'NgayKetThuc' => $endDate,
+                    'TrangThai' => $status,
                     'DonViDo' => $data['DonViDo'] ?? $data['DonVi'] ?? null,
-                ]
+                ])
             );
 
             $saved = DB::table('muctieusuckhoe')
                 ->where('NguoiDungID', $userId)
                 ->where('LoaiMucTieu', $type)
                 ->first();
+            $this->recordGoalHistory($userId, $type, $existing, $saved, $source, $reason);
         } else {
             $saved = null;
         }
@@ -159,10 +183,14 @@ class UserGoalController extends Controller
             $this->waterSuggestion($userId, $from, $to, $days),
             $this->activitySuggestion($userId, $from, $to, $days),
         ]));
+        $progress = $this->goalProgressRows($userId);
 
         $shouldNotify = (bool) ($data['notify'] ?? true);
         if ($shouldNotify && !empty($suggestions)) {
             $this->notifyGoalSuggestions($userId, $suggestions);
+        }
+        if ($shouldNotify && !empty($progress)) {
+            $this->notifyGoalDeadlines($userId, $progress);
         }
 
         return response()->json([
@@ -176,6 +204,7 @@ class UserGoalController extends Controller
                 ? 'Chua can dieu chinh muc tieu. He thong se tiep tuc theo doi tien do cua ban.'
                 : 'Co de xuat dieu chinh muc tieu. Nguoi dung can xac nhan truoc khi cap nhat.',
             'data' => $suggestions,
+            'progress' => $progress,
         ]);
     }
 
@@ -187,9 +216,13 @@ class UserGoalController extends Controller
             'Loai' => 'required|string|max:100',
             'GiaTri' => 'required|numeric|min:1',
             'DonVi' => 'nullable|string|max:50',
+            'NgayBatDau' => 'nullable|date',
+            'NgayKetThuc' => 'nullable|date|after_or_equal:NgayBatDau',
         ]);
 
         $userId = (int) ($data['NguoiDungID'] ?? $data['user_id']);
+        $startDate = $data['NgayBatDau'] ?? now('Asia/Ho_Chi_Minh')->toDateString();
+        $endDate = $data['NgayKetThuc'] ?? now('Asia/Ho_Chi_Minh')->addDays(6)->toDateString();
         $response = $this->store(new Request([
             'NguoiDungID' => $userId,
             'Loai' => $data['Loai'],
@@ -197,6 +230,11 @@ class UserGoalController extends Controller
             'DonVi' => $data['DonVi'] ?? $this->unitForType($data['Loai']),
             'ChuKyLap' => 'HangNgay',
             'BatNhac' => true,
+            'NgayBatDau' => $startDate,
+            'NgayKetThuc' => $endDate,
+            'TrangThai' => 'DangTheoDoi',
+            'NguonThayDoi' => 'GoalSuggestion',
+            'LyDo' => 'Nguoi dung xac nhan de xuat dieu chinh muc tieu',
         ]));
 
         $this->createNotification(
@@ -206,6 +244,55 @@ class UserGoalController extends Controller
         );
 
         return $response;
+    }
+
+    public function progress(Request $request)
+    {
+        $data = $request->validate([
+            'NguoiDungID' => 'required_without:user_id|integer|exists:taikhoan,ID',
+            'user_id' => 'required_without:NguoiDungID|integer|exists:taikhoan,ID',
+            'from' => 'nullable|date',
+            'to' => 'nullable|date|after_or_equal:from',
+            'notify' => 'nullable|boolean',
+        ]);
+
+        $userId = (int) ($data['NguoiDungID'] ?? $data['user_id']);
+        $progress = $this->goalProgressRows($userId, $data['from'] ?? null, $data['to'] ?? null);
+        if ((bool) ($data['notify'] ?? true)) {
+            $this->notifyGoalDeadlines($userId, $progress);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $progress,
+        ]);
+    }
+
+    public function history(Request $request)
+    {
+        $data = $request->validate([
+            'NguoiDungID' => 'required_without:user_id|integer|exists:taikhoan,ID',
+            'user_id' => 'required_without:NguoiDungID|integer|exists:taikhoan,ID',
+            'Loai' => 'nullable|string|max:100',
+            'limit' => 'nullable|integer|min:1|max:100',
+        ]);
+
+        $userId = (int) ($data['NguoiDungID'] ?? $data['user_id']);
+        if (!Schema::hasTable('muctieulichsu')) {
+            return response()->json(['success' => true, 'data' => []]);
+        }
+
+        $query = DB::table('muctieulichsu')
+            ->where('NguoiDungID', $userId)
+            ->orderByDesc('ID');
+        if (!empty($data['Loai'])) {
+            $query->where('Loai', $data['Loai']);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $query->limit((int) ($data['limit'] ?? 30))->get(),
+        ]);
     }
 
     private function waterSuggestion(int $userId, string $from, string $to, int $days): ?array
@@ -412,6 +499,175 @@ class UserGoalController extends Controller
             'TrangThaiGui' => 'DaGui',
             'DaDoc' => 0,
         ]);
+    }
+
+    private function goalProgressRows(int $userId, ?string $overrideFrom = null, ?string $overrideTo = null): array
+    {
+        $goals = $this->currentGoalRows($userId);
+        $rows = [];
+        foreach ($goals as $goal) {
+            $rows[] = $this->progressForGoal($userId, $goal, $overrideFrom, $overrideTo);
+        }
+
+        return $rows;
+    }
+
+    private function currentGoalRows(int $userId)
+    {
+        if (Schema::hasTable('muctieunguoidung')) {
+            return DB::table('muctieunguoidung')
+                ->where('NguoiDungID', $userId)
+                ->orderBy('Loai')
+                ->get();
+        }
+
+        if (Schema::hasTable('user_goals')) {
+            return DB::table('user_goals')
+                ->where('NguoiDungID', $userId)
+                ->orderBy('Loai')
+                ->get();
+        }
+
+        if (Schema::hasTable('muctieusuckhoe')) {
+            return DB::table('muctieusuckhoe')
+                ->where('NguoiDungID', $userId)
+                ->orderBy('LoaiMucTieu')
+                ->get();
+        }
+
+        return collect();
+    }
+
+    private function progressForGoal(int $userId, object $goal, ?string $overrideFrom = null, ?string $overrideTo = null): array
+    {
+        $type = $goal->Loai ?? $goal->LoaiMucTieu ?? 'TongQuat';
+        $value = (float) ($goal->GiaTri ?? $goal->GiaTriMucTieu ?? 0);
+        $unit = $goal->DonVi ?? $goal->DonViDo ?? $this->unitForType($type);
+        $hasDeadline = !empty($goal->NgayKetThuc);
+        $start = $overrideFrom
+            ?: ($goal->NgayBatDau ?? now('Asia/Ho_Chi_Minh')->subDays(6)->toDateString());
+        $end = $overrideTo
+            ?: ($goal->NgayKetThuc ?? now('Asia/Ho_Chi_Minh')->toDateString());
+        $days = max(1, now('Asia/Ho_Chi_Minh')->parse($start)->diffInDays(now('Asia/Ho_Chi_Minh')->parse($end)) + 1);
+
+        $metrics = [
+            'completed_days' => null,
+            'total_days' => $days,
+            'completion_rate' => 0,
+            'average' => null,
+        ];
+
+        if ($value > 0 && in_array($type, self::WATER_TYPES, true)) {
+            $metrics = $this->completionMetrics($this->dailyWaterRows($userId, $start, $end), $value, $days);
+        } elseif ($value > 0 && in_array($type, self::ACTIVITY_TYPES, true)) {
+            $metrics = $this->completionMetrics($this->dailyActivityRows($userId, $start, $end), $value, $days);
+        }
+
+        $completionPercent = round(((float) $metrics['completion_rate']) * 100, 1);
+        $deadline = $this->deadlineStatus($end, $completionPercent, $hasDeadline);
+
+        return [
+            'id' => $goal->ID ?? null,
+            'loai' => $type,
+            'goal' => $value,
+            'unit' => $unit,
+            'ngay_bat_dau' => $start,
+            'ngay_ket_thuc' => $goal->NgayKetThuc ?? null,
+            'has_deadline' => $hasDeadline,
+            'trang_thai' => $goal->TrangThai ?? 'DangTheoDoi',
+            'completed_days' => $metrics['completed_days'],
+            'total_days' => $metrics['total_days'],
+            'completion_percent' => $completionPercent,
+            'average' => $metrics['average'] === null ? null : round((float) $metrics['average'], 1),
+            'deadline_status' => $deadline['status'],
+            'days_remaining' => $deadline['days_remaining'],
+            'requires_user_confirmation' => false,
+        ];
+    }
+
+    private function deadlineStatus(string $endDate, float $completionPercent, bool $hasDeadline): array
+    {
+        if (!$hasDeadline) {
+            return ['status' => 'KhongCoHan', 'days_remaining' => null];
+        }
+
+        $today = now('Asia/Ho_Chi_Minh')->startOfDay();
+        $end = now('Asia/Ho_Chi_Minh')->parse($endDate)->startOfDay();
+        $daysRemaining = $today->diffInDays($end, false);
+
+        if ($completionPercent >= 100) {
+            return ['status' => 'HoanThanh', 'days_remaining' => $daysRemaining];
+        }
+        if ($daysRemaining < 0) {
+            return ['status' => 'QuaHan', 'days_remaining' => $daysRemaining];
+        }
+        if ($daysRemaining <= 2) {
+            return ['status' => 'SapHetHan', 'days_remaining' => $daysRemaining];
+        }
+
+        return ['status' => 'DangTheoDoi', 'days_remaining' => $daysRemaining];
+    }
+
+    private function notifyGoalDeadlines(int $userId, array $progressRows): void
+    {
+        foreach ($progressRows as $row) {
+            if (!$row['has_deadline']) {
+                continue;
+            }
+
+            if ($row['deadline_status'] === 'SapHetHan') {
+                $content = "Muc tieu {$row['loai']} se het han sau {$row['days_remaining']} ngay. Tien do hien tai {$row['completion_percent']}%.";
+                $this->createNotification($userId, 'GoalDeadline', $content);
+            }
+
+            if ($row['deadline_status'] === 'QuaHan') {
+                $content = "Muc tieu {$row['loai']} da qua han. Tien do dat {$row['completion_percent']}%. Ban co the dieu chinh muc tieu moi neu can.";
+                $this->createNotification($userId, 'GoalOverdue', $content);
+            }
+        }
+    }
+
+    private function recordGoalHistory(int $userId, string $type, ?object $oldGoal, ?object $newGoal, string $source, ?string $reason): void
+    {
+        if (!$newGoal || !Schema::hasTable('muctieulichsu')) {
+            return;
+        }
+
+        $oldValue = $oldGoal ? (float) ($oldGoal->GiaTri ?? $oldGoal->GiaTriMucTieu ?? 0) : null;
+        $newValue = (float) ($newGoal->GiaTri ?? $newGoal->GiaTriMucTieu ?? 0);
+        $oldEnd = $oldGoal->NgayKetThuc ?? null;
+        $newEnd = $newGoal->NgayKetThuc ?? null;
+        $oldStatus = $oldGoal->TrangThai ?? null;
+        $newStatus = $newGoal->TrangThai ?? 'DangTheoDoi';
+
+        if ($oldGoal && $oldValue === $newValue && $oldEnd === $newEnd && $oldStatus === $newStatus) {
+            return;
+        }
+
+        DB::table('muctieulichsu')->insert($this->onlyExistingColumns('muctieulichsu', [
+            'NguoiDungID' => $userId,
+            'MucTieuID' => $newGoal->ID ?? null,
+            'Loai' => $type,
+            'GiaTriCu' => $oldValue,
+            'GiaTriMoi' => $newValue,
+            'DonVi' => $newGoal->DonVi ?? $newGoal->DonViDo ?? $this->unitForType($type),
+            'NgayBatDau' => $newGoal->NgayBatDau ?? null,
+            'NgayKetThuc' => $newEnd,
+            'TrangThai' => $newStatus,
+            'NguonThayDoi' => $source,
+            'LyDo' => $reason,
+            'created_at' => now('Asia/Ho_Chi_Minh'),
+            'updated_at' => now('Asia/Ho_Chi_Minh'),
+        ]));
+    }
+
+    private function onlyExistingColumns(string $table, array $payload): array
+    {
+        return array_filter(
+            $payload,
+            fn ($value, $column) => Schema::hasColumn($table, $column),
+            ARRAY_FILTER_USE_BOTH
+        );
     }
 
     private function roundStep(float $value, int $step): float
