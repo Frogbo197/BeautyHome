@@ -66,6 +66,19 @@ class ChatMessageService
                 );
             }
 
+            if ($this->isEvidenceIntent($message)) {
+                return $this->storeAndReturn(
+                    $userId,
+                    $sessionId,
+                    $rawMessage,
+                    $this->buildEvidenceReply($ctx),
+                    self::MODE_NORMAL,
+                    'evidence',
+                    $ctx,
+                    'rule-evidence'
+                );
+            }
+
             $blockedMention = $this->blockedFoodMentioned($message, $ctx);
             if ($blockedMention !== null) {
                 return $this->storeAndReturn(
@@ -364,6 +377,14 @@ Mode hiện tại: {$mode}
         return "Cố lên {$ctx['ten']} nha. Hôm nay chỉ cần làm đều 3 việc nhỏ: uống nước, ghi một bữa ăn thật, và vận động nhẹ 10-20 phút. Nhỏ nhưng tích lũy rất tốt.";
     }
 
+    private function buildEvidenceReply(array $ctx): string
+    {
+        return "Minh dua goi y tren du lieu trong ho so va nhat ky cua ban, khong tu chan doan benh. "
+            . $this->recommendationBasisText($ctx, 'evidence') . ' '
+            . "Tieu chi phan tich gom: BMI theo nhom WHO nguoi truong thanh; nuoc uong so voi muc tieu ngay; van dong so voi muc khuyen nghi tong quat khoang 150 phut/tuan; an uong dua tren calo, protein, carb, fat, che do an va muc tieu; thuoc dua tren lich dung va trang thai da_uong/bo_lo/tam_ngung. "
+            . "Benh nen va di ung duoc dung nhu bo loc an toan: vi du di ung thi loai mon do, tieu duong thi uu tien tinh bot cham va han che do ngot, hen suyen thi uu tien van dong nhe. Neu co trieu chung nguy hiem, minh se canh bao di co so y te thay vi tra loi chan doan.";
+    }
+
     private function fallbackReply(array $ctx): string
     {
         return "{$ctx['ten']} ơi, mình sẵn sàng hỗ trợ. Bạn có thể hỏi kiểu: 'bữa sáng nên ăn gì', 'buổi trưa nên tập gì', hoặc 'hôm nay sức khỏe của tôi thế nào'.";
@@ -538,6 +559,28 @@ Mode hiện tại: {$mode}
             'toi buon', 'minh buon', 'em buon', 'dang buon', 'toi vui', 'minh vui',
             'em vui', 'toi chan', 'minh chan', 'em chan', 'chan qua',
             'met', 'u oai', 'het pin', 'het nang luong', 'vu vo', 'tam chuyen',
+        ]);
+    }
+
+    private function isEvidenceIntent(string $message): bool
+    {
+        return $this->containsAny($message, [
+            'dua vao dau',
+            'dua tren dau',
+            'co so nao',
+            'co so gi',
+            'tieu chi nao',
+            'tieu chi gi',
+            'nguon nao',
+            'nguon goc',
+            'vi sao goi y',
+            'tai sao goi y',
+            'lay du lieu dau',
+            'lay co so dau',
+            'phan tich theo gi',
+            'chuan nao',
+            'guideline',
+            'who',
         ]);
     }
 
@@ -746,6 +789,44 @@ Mode hiện tại: {$mode}
             (string) ($ctx['muc_do_van_dong'] ?? ''),
             (string) ($ctx['che_do_an'] ?? ''),
         ]));
+    }
+
+    private function recommendationBasisText(array $ctx, string $type = 'general'): string
+    {
+        $parts = [
+            "BMI {$ctx['bmi']} ({$ctx['bmi_label']})",
+            "nuoc {$ctx['water_today_ml']}/{$ctx['water_goal_ml']} ml",
+            "calo nap {$ctx['calo_nap']} kcal, calo dot {$ctx['calo_dot']} kcal",
+            "protein {$ctx['protein']}g, carb {$ctx['carb']}g, fat {$ctx['fat']}g",
+        ];
+
+        if (trim((string) ($ctx['muc_tieu'] ?? '')) !== '') {
+            $parts[] = 'muc tieu: ' . trim((string) $ctx['muc_tieu']);
+        }
+        if (trim((string) ($ctx['che_do_an'] ?? '')) !== '') {
+            $parts[] = 'che do an: ' . trim((string) $ctx['che_do_an']);
+        }
+        if (trim((string) ($ctx['muc_do_van_dong'] ?? '')) !== '') {
+            $parts[] = 'muc do van dong: ' . trim((string) $ctx['muc_do_van_dong']);
+        }
+        if (trim((string) ($ctx['benh_nen'] ?? '')) !== '') {
+            $parts[] = 'benh nen/the trang: ' . trim((string) $ctx['benh_nen'] . ' ' . ($ctx['the_trang'] ?? ''));
+        }
+
+        $prefs = $ctx['food_preferences'] ?? [];
+        $blocked = array_values(array_filter($prefs['blocked'] ?? []));
+        if (!empty($blocked)) {
+            $parts[] = 'thuc pham can tranh: ' . implode(', ', $blocked);
+        }
+
+        $prefix = match ($type) {
+            'nutrition' => 'Co so goi y an uong: ',
+            'workout' => 'Co so goi y van dong: ',
+            'summary' => 'Co so tong ket: ',
+            default => 'Co so he thong dang dung: ',
+        };
+
+        return $prefix . implode('; ', $parts) . '.';
     }
 
     private function isHighActivityProfile(array $ctx): bool
