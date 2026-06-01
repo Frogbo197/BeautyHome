@@ -51,7 +51,9 @@ class ChatMessageService
             $ctx = $this->normalizeContext($this->healthContext->build($userId), $userId);
             $ctx['food_preferences'] = $this->foodPreferenceContext($userId);
 
-            if ($this->containsUnsafeContent($message)) {
+            $safetyReply = $this->safetyReply($message);
+            if ($safetyReply !== null) {
+                $ctx['_safety_reply'] = $safetyReply;
                 return $this->storeAndReturn(
                     $userId,
                     $sessionId,
@@ -65,7 +67,7 @@ class ChatMessageService
             }
 
             $blockedMention = $this->blockedFoodMentioned($message, $ctx);
-            if ($blockedMention !== null && $this->isFoodIntent($message)) {
+            if ($blockedMention !== null) {
                 return $this->storeAndReturn(
                     $userId,
                     $sessionId,
@@ -185,6 +187,10 @@ class ChatMessageService
         array $ctx,
         string $model
     ): JsonResponse {
+        if ($model === 'rule-safety' && isset($ctx['_safety_reply'])) {
+            $reply = (string) $ctx['_safety_reply'];
+        }
+
         $reply = $this->cleanReply($reply);
 
         ChatHistory::create([
@@ -268,6 +274,10 @@ Mode hiện tại: {$mode}
 
     private function buildSummaryReply(array $ctx): string
     {
+        if ((int) ($ctx['water_goal_ml'] ?? 0) > 0) {
+            return "{$ctx['ten']} ơi, hôm nay bạn đã nạp khoảng {$ctx['calo_nap']} kcal và đốt khoảng {$ctx['calo_dot']} kcal. BMI hiện là {$ctx['bmi']} ({$ctx['bmi_label']}), protein khoảng {$ctx['protein']}g, nước uống {$ctx['water_today_ml']}/{$ctx['water_goal_ml']} ml. Nếu có thể, hãy ghi thêm bữa ăn, vận động và nước để mình gợi ý chính xác hơn nha.";
+        }
+
         return "{$ctx['ten']} ơi, hôm nay bạn đã nạp khoảng {$ctx['calo_nap']} kcal và đốt khoảng {$ctx['calo_dot']} kcal. BMI hiện là {$ctx['bmi']} ({$ctx['bmi_label']}), protein khoảng {$ctx['protein']}g; nếu có thể, hãy ghi thêm bữa ăn, vận động và nước để mình gợi ý chính xác hơn nha.";
     }
 
@@ -313,9 +323,13 @@ Mode hiện tại: {$mode}
         $label = $this->mealSlotLabel($slot);
         $foods = $this->mealSuggestions($slot, $ctx);
         $foodText = implode('; ', array_slice($foods, 0, 3));
+        $isVegetarian = $this->isVegetarianProfile($ctx);
         $proteinNote = ((float) $ctx['protein'] < 50)
             ? ' Protein hôm nay còn thấp, nên ưu tiên món có cá, thịt nạc, trứng, đậu hoặc sữa chua ít đường.'
             : '';
+        if ($isVegetarian && $proteinNote !== '') {
+            $proteinNote = ' Protein hôm nay còn thấp, nên ưu tiên đậu hũ, đậu lăng, đậu/hạt, sữa đậu nành không đường; nếu bạn ăn chay có trứng/sữa thì có thể thêm trứng hoặc sữa chua ít đường.';
+        }
 
         return "{$ctx['ten']} ơi, {$label} bạn có thể chọn: {$foodText}.{$proteinNote} Mình đã tránh các món bạn dị ứng hoặc không thích nếu có ghi trong hồ sơ.";
     }
@@ -334,7 +348,9 @@ Mode hiện tại: {$mode}
             'tap nhieu',
         ]);
         $highActivity = $this->isHighActivityProfile($ctx) || $messageHighActivity;
-        $workouts = $this->workoutSuggestions($slot, $ctx, $wantsGentle || $highActivity);
+        $needsGentle = $wantsGentle || $highActivity || $this->needsGentleWorkout($ctx);
+        $workouts = $this->workoutSuggestions($slot, $ctx, $needsGentle);
+        $workouts = array_values(array_unique(array_merge($this->profileWorkoutSuggestions($slot, $ctx), $workouts)));
         $workoutText = implode('; ', array_slice($workouts, 0, 3));
         $tone = $highActivity
             ? 'Vì hồ sơ vận động của bạn đang cao, mình ưu tiên bài phục hồi nhẹ để tránh quá tải.'
@@ -356,6 +372,8 @@ Mode hiện tại: {$mode}
     private function mealSuggestions(string $slot, array $ctx): array
     {
         $risk = $this->isNutritionRiskProfile($ctx);
+        $isVegetarian = $this->isVegetarianProfile($ctx);
+        $profileFoods = $this->profileMealSuggestions($slot, $ctx);
         $sets = [
             'morning' => [
                 'cháo yến mạch thịt bằm với rau củ',
@@ -383,10 +401,29 @@ Mode hiện tại: {$mode}
             ],
         ];
 
-        $foods = $sets[$slot] ?? $sets[$this->slotByCurrentTime()];
+        $foods = array_merge($profileFoods, $sets[$slot] ?? $sets[$this->slotByCurrentTime()]);
         if ($risk) {
             $foods = array_values(array_filter($foods, fn ($food) => !$this->containsAny($food, ['xôi', 'nước béo', 'chiên', 'rán', 'ngọt'])));
             $foods[] = 'cá hấp hoặc gà luộc kèm nhiều rau';
+        }
+
+        if ($isVegetarian) {
+            $foods = array_values(array_filter($foods, fn ($food) => !$this->containsAny($food, [
+                'cá',
+                'ca ',
+                'gà',
+                'ga ',
+                'bò',
+                'bo ',
+                'thịt',
+                'thit',
+                'tôm',
+                'tom',
+                'trứng',
+                'trung',
+                'hải sản',
+                'hai san',
+            ])));
         }
 
         if ((float) $ctx['protein'] < 50) {
@@ -394,7 +431,30 @@ Mode hiện tại: {$mode}
             $foods[] = 'đậu hũ hoặc đậu lăng hầm rau củ';
         }
 
-        return $this->filterBlockedFoods(array_values(array_unique($foods)), $ctx);
+        if ($isVegetarian) {
+            $foods = array_values(array_filter($foods, fn ($food) => !$this->containsAny($food, [
+                'cá',
+                'ca ',
+                'gà',
+                'ga ',
+                'bò',
+                'bo ',
+                'thịt',
+                'thit',
+                'tôm',
+                'tom',
+                'trứng',
+                'trung',
+                'hải sản',
+                'hai san',
+            ])));
+        }
+
+        $foods = $this->filterBlockedFoods(array_values(array_unique($foods)), $ctx);
+
+        return empty($foods)
+            ? ['cháo yến mạch rau củ', 'cơm gạo lứt với đậu hũ và rau luộc', 'canh rau kèm trứng luộc nếu phù hợp chế độ ăn']
+            : $foods;
     }
 
     private function workoutSuggestions(string $slot, array $ctx, bool $gentle): array
@@ -467,8 +527,13 @@ Mode hiện tại: {$mode}
 
     private function isCasualIntent(string $message): bool
     {
+        $plain = $this->plainText($message);
+        if (preg_match('/^(xin chao|chao|hello|hi|hey|helo)(\s|$)/u', $plain) === 1) {
+            return true;
+        }
+
         return $this->containsAny($message, [
-            'xin chao', 'chao', 'hello', 'hi', 'hey', 'cam on', 'thank', 'thanks',
+            'cam on', 'thank', 'thanks',
             'thoi tiet', 'troi hom nay', 'hom nay mua', 'hom nay nang',
             'toi buon', 'minh buon', 'em buon', 'dang buon', 'toi vui', 'minh vui',
             'em vui', 'toi chan', 'minh chan', 'em chan', 'chan qua',
@@ -548,6 +613,141 @@ Mode hiện tại: {$mode}
         ]);
     }
 
+    private function profileMealSuggestions(string $slot, array $ctx): array
+    {
+        $profileText = $this->profileText($ctx);
+        $goalText = $this->plainText((string) ($ctx['muc_tieu'] ?? ''));
+        $dietText = $this->plainText((string) ($ctx['che_do_an'] ?? ''));
+        $foods = [];
+
+        if ($this->containsAny($dietText, ['chay', 'vegan', 'vegetarian'])) {
+            $foods = array_merge($foods, match ($slot) {
+                'morning' => ['yến mạch với sữa đậu nành không đường và chuối', 'bánh mì nguyên cám kèm đậu hũ áp chảo'],
+                'noon' => ['cơm gạo lứt với đậu hũ sốt cà chua ít dầu và rau luộc', 'bún rau củ kèm nấm và đậu hũ'],
+                'evening' => ['canh nấm rau củ kèm đậu hũ non', 'miến rau củ với nấm và đậu hũ'],
+                default => ['sữa đậu nành không đường', 'khoai lang nhỏ kèm hạt'],
+            });
+        }
+
+        if ($this->containsAny($dietText, ['low carb', 'keto', 'it carb', 'ít carb'])) {
+            $foods = array_merge($foods, ['trứng luộc kèm rau xanh', 'ức gà hoặc cá hấp với salad', 'đậu hũ kèm rau luộc ít tinh bột']);
+        }
+
+        if ($this->containsAny($goalText, ['giam can', 'giảm cân', 'gi m c n', 'giam mo', 'giảm mỡ', 'gi m m'])) {
+            $foods = array_merge($foods, match ($slot) {
+                'morning' => ['sữa chua không đường với yến mạch và trái cây ít ngọt', 'trứng luộc kèm rau và bánh mì nguyên cám nhỏ'],
+                'noon' => ['cơm gạo lứt ít, cá hấp và nhiều rau luộc', 'salad ức gà với khoai lang nhỏ'],
+                'evening' => ['cá hấp hoặc đậu hũ với canh rau, giảm tinh bột', 'miến gà xé nhiều rau, ít dầu'],
+                default => ['dưa leo hoặc trái cây ít ngọt', 'sữa chua không đường'],
+            });
+        }
+
+        if ($this->containsAny($goalText, ['tang can', 'tăng cân', 't ng c n'])) {
+            $foods = array_merge($foods, match ($slot) {
+                'morning' => ['bánh mì nguyên cám kèm trứng và sữa', 'yến mạch với chuối, sữa và hạt'],
+                'noon' => ['cơm với cá hoặc thịt nạc, thêm rau và một phần chất béo tốt', 'bún/phở có thịt nạc kèm thêm trứng'],
+                'evening' => ['cơm vừa đủ với thịt nạc hoặc cá, thêm canh rau', 'khoai lang kèm trứng và rau'],
+                default => ['chuối kèm sữa chua', 'sữa đậu nành và hạt'],
+            });
+        }
+
+        if ($this->containsAny($goalText, ['tang co', 'tăng cơ', 't ng c', 'gym', 'co bap', 'cơ bắp', 'c b p'])) {
+            $foods = array_merge($foods, ['ức gà hoặc cá với cơm vừa phải và rau', 'trứng hoặc đậu hũ kèm khoai lang', 'sữa chua không đường thêm hạt nếu cần bữa phụ']);
+        }
+
+        if ($this->containsAny($profileText, ['tieu duong', 'tiểu đường', 'ti u ng', 'duong huyet', 'đường huyết', 'ng huy t'])) {
+            $foods = array_merge($foods, ['cơm gạo lứt lượng vừa với cá hấp và rau xanh', 'đậu hũ hoặc thịt nạc kèm rau, hạn chế nước ngọt và món nhiều đường']);
+        }
+
+        if ($this->containsAny($profileText, ['huyet ap', 'huyết áp', 'tim mach', 'tim mạch'])) {
+            $foods = array_merge($foods, ['cá hấp hoặc gà luộc ít muối với rau luộc', 'canh rau nhạt kèm cơm vừa phải, hạn chế đồ mặn']);
+        }
+
+        if ($this->containsAny($profileText, ['mo mau', 'mỡ máu', 'cholesterol'])) {
+            $foods = array_merge($foods, ['cá hấp với rau xanh và cơm gạo lứt', 'đậu hũ sốt cà chua ít dầu kèm rau luộc']);
+        }
+
+        return array_values(array_unique($foods));
+    }
+
+    private function profileWorkoutSuggestions(string $slot, array $ctx): array
+    {
+        $profileText = $this->profileText($ctx);
+        $goalText = $this->plainText((string) ($ctx['muc_tieu'] ?? ''));
+        $activityText = $this->plainText((string) ($ctx['muc_do_van_dong'] ?? ''));
+        $workouts = [];
+
+        if ($this->needsGentleWorkout($ctx)) {
+            $workouts = array_merge($workouts, match ($slot) {
+                'morning' => ['đi bộ nhẹ 10-15 phút', 'giãn cơ toàn thân 8 phút'],
+                'noon' => ['đi bộ chậm sau ăn 10 phút', 'giãn cổ vai gáy 5-8 phút'],
+                'evening' => ['yoga thư giãn 10 phút', 'đi bộ chậm 10-15 phút'],
+                default => ['xoay khớp nhẹ 5 phút', 'hít thở sâu kết hợp giãn cơ 5 phút'],
+            });
+        }
+
+        if ($this->containsAny($goalText, ['giam can', 'giảm cân', 'gi m c n', 'giam mo', 'giảm mỡ', 'gi m m'])) {
+            $workouts = array_merge($workouts, ['đi bộ nhanh 20-30 phút', 'đạp xe nhẹ 20 phút', 'cardio nhẹ 12-15 phút']);
+        }
+
+        if ($this->containsAny($goalText, ['tang co', 'tăng cơ', 't ng c', 'gym', 'co bap', 'cơ bắp', 'c b p'])) {
+            $workouts = array_merge($workouts, ['squat 3 hiệp x 10 lần', 'hít đất gối hoặc hít đất cơ bản 3 hiệp', 'plank 3 hiệp x 20-30 giây']);
+        }
+
+        if ($this->containsAny($goalText, ['tang can', 'tăng cân', 't ng c n'])) {
+            $workouts = array_merge($workouts, ['tập sức mạnh nhẹ 15-20 phút', 'squat và chống đẩy biến thể nhẹ', 'đi bộ thư giãn 10 phút sau ăn']);
+        }
+
+        if ($this->containsAny($activityText, ['it', 'ít', ' t ', 'sedentary', 'khong', 'không'])) {
+            $workouts = array_merge(['đi bộ nhẹ 10 phút', 'đứng dậy giãn cơ 2-3 phút mỗi giờ'], $workouts);
+        }
+
+        if ($this->containsAny($activityText, ['cao', 'active', 'nhieu', 'nhiều', 'v n ng cao'])) {
+            $workouts = array_merge(['giãn cơ phục hồi 10 phút', 'yoga nhẹ 12 phút', 'đi bộ chậm phục hồi 15 phút'], $workouts);
+        }
+
+        if ($this->containsAny($profileText, ['huyet ap', 'huyết áp', 'tim mach', 'tim mạch', 'tieu duong', 'tiểu đường', 'ti u ng'])) {
+            $workouts = array_merge(['đi bộ nhẹ đến vừa 15-20 phút', 'tránh bài cường độ cao nếu chóng mặt hoặc mệt bất thường'], $workouts);
+        }
+
+        return array_values(array_unique($workouts));
+    }
+
+    private function needsGentleWorkout(array $ctx): bool
+    {
+        $profileText = $this->profileText($ctx);
+        $bmi = (float) ($ctx['bmi'] ?? 0);
+
+        return $bmi >= 30 || $this->containsAny($profileText, [
+            'huyet ap',
+            'huyết áp',
+            'tim mach',
+            'tim mạch',
+            'hen',
+            'asthma',
+            'xuong khop',
+            'xương khớp',
+            'dau goi',
+            'đau gối',
+            'yeu',
+            'yếu',
+            'benh nen nhay cam',
+            'bệnh nền nhạy cảm',
+        ]);
+    }
+
+    private function profileText(array $ctx): string
+    {
+        return $this->plainText(implode(' ', [
+            (string) ($ctx['muc_tieu'] ?? ''),
+            (string) ($ctx['benh_nen'] ?? ''),
+            (string) ($ctx['medical_context_ai'] ?? ''),
+            (string) ($ctx['the_trang'] ?? ''),
+            (string) ($ctx['muc_do_van_dong'] ?? ''),
+            (string) ($ctx['che_do_an'] ?? ''),
+        ]));
+    }
+
     private function isHighActivityProfile(array $ctx): bool
     {
         return $this->containsAny((string) ($ctx['muc_do_van_dong'] ?? ''), ['cao', 'nhiều', 'nhieu', 'active', 'vận động cao', 'van dong cao']);
@@ -573,14 +773,26 @@ Mode hiện tại: {$mode}
         return false;
     }
 
+    private function isVegetarianProfile(array $ctx): bool
+    {
+        return $this->containsAny((string) ($ctx['che_do_an'] ?? ''), [
+            'chay',
+            'an chay',
+            'vegan',
+            'vegetarian',
+            'plant based',
+        ]);
+    }
+
     private function foodPreferenceContext(int $userId): array
     {
         $prefs = ['likes' => [], 'dislikes' => [], 'allergies' => [], 'blocked' => []];
-        if (!Schema::hasTable(self::FOOD_PREF_TABLE)) {
+        $table = $this->foodPreferenceTable();
+        if ($table === null) {
             return $prefs;
         }
 
-        $rows = DB::table(self::FOOD_PREF_TABLE)
+        $rows = DB::table($table)
             ->where('NguoiDungID', $userId)
             ->get(['FoodName', 'PreferenceType']);
 
@@ -632,6 +844,7 @@ Mode hiện tại: {$mode}
             $expanded[] = $term;
             $plain = $this->plainText($term);
             if (str_contains($plain, 'hai san')) {
+                $expanded[] = 'ca';
                 $expanded = array_merge($expanded, ['tôm', 'cua', 'mực', 'nghêu', 'sò', 'ốc', 'hàu']);
             }
             if ($plain === 'sua' || str_contains($plain, 'sua bo')) {
@@ -678,7 +891,8 @@ Mode hiện tại: {$mode}
 
     private function learnFoodPreference(int $userId, string $message): void
     {
-        if (!Schema::hasTable(self::FOOD_PREF_TABLE)) {
+        $table = $this->foodPreferenceTable();
+        if ($table === null) {
             return;
         }
 
@@ -695,12 +909,12 @@ Mode hiện tại: {$mode}
                     continue;
                 }
 
-                $food = trim(mb_substr($matches[1] ?? '', 0, 80));
+                $food = $this->cleanFoodPreferenceCandidate((string) ($matches[1] ?? ''));
                 if ($food === '') {
                     continue;
                 }
 
-                DB::table(self::FOOD_PREF_TABLE)->updateOrInsert(
+                DB::table($table)->updateOrInsert(
                     ['NguoiDungID' => $userId, 'FoodName' => $food],
                     ['PreferenceType' => $type, 'NgayTao' => now(), 'NgayCapNhat' => now()]
                 );
@@ -708,6 +922,100 @@ Mode hiện tại: {$mode}
                 return;
             }
         }
+    }
+
+    private function foodPreferenceTable(): ?string
+    {
+        foreach ([self::FOOD_PREF_TABLE, strtolower(self::FOOD_PREF_TABLE)] as $table) {
+            if (Schema::hasTable($table)) {
+                return $table;
+            }
+        }
+
+        return null;
+    }
+
+    private function cleanFoodPreferenceCandidate(string $candidate): string
+    {
+        $food = ' ' . $this->plainText($candidate) . ' ';
+        $stopPhrases = [
+            ' bua ',
+            ' bua sang',
+            ' bua trua',
+            ' bua toi',
+            ' mon ',
+            ' nen ',
+            ' an gi',
+            ' de ',
+            ' vi ',
+            ' giam can',
+            ' tang can',
+            ' tang co',
+            ' kiem soat',
+            ' hom nay',
+        ];
+
+        $cutAt = null;
+        foreach ($stopPhrases as $phrase) {
+            $pos = mb_strpos($food, $phrase);
+            if ($pos !== false && ($cutAt === null || $pos < $cutAt)) {
+                $cutAt = $pos;
+            }
+        }
+
+        if ($cutAt !== null) {
+            $food = mb_substr($food, 0, $cutAt);
+        }
+
+        $food = trim(preg_replace('/\s+/', ' ', $food) ?? $food);
+        $words = preg_split('/\s+/', $food, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        if (count($words) > 5) {
+            $food = implode(' ', array_slice($words, 0, 5));
+        }
+
+        return trim(mb_substr($food, 0, 80));
+    }
+
+    private function safetyReply(string $message): ?string
+    {
+        if ($this->containsAny($message, [
+            'đau ngực',
+            'dau nguc',
+            'khó thở',
+            'kho tho',
+            'đột quỵ',
+            'dot quy',
+            'tê liệt',
+            'te liet',
+            'ngất',
+            'ngat',
+            'co giật',
+            'co giat',
+            'xuất huyết',
+            'xuat huyet',
+            'dau du doi',
+            'đau dữ dội',
+            'dau dau du doi',
+            'yếu nửa người',
+            'yeu nua nguoi',
+        ])) {
+            return 'Minh khong the ket luan tinh trang nay qua chat. Neu ban dang dau nguc, kho tho, ngat, yeu/te nua nguoi, co giat, xuat huyet hoac dau du doi, hay goi cap cuu dia phuong hoac den co so y te gan nhat ngay; neu co the, nho nguoi than o canh ban trong luc cho ho tro.';
+        }
+
+        if ($this->containsAny($message, [
+            'tự tử',
+            'tu tu',
+            'tự hại',
+            'tu hai',
+            'overdose',
+            'kill myself',
+            'uống thuốc quá liều',
+            'uong thuoc qua lieu',
+        ])) {
+            return 'Minh rat tiec vi ban dang phai trai qua dieu nay. Hay lien he ngay nguoi than dang tin cay, bac si, cap cuu dia phuong, hoac den co so y te gan nhat; neu ban vua uong qua lieu hoac co nguy co tu hai, can tim ho tro khan cap ngay.';
+        }
+
+        return null;
     }
 
     private function containsUnsafeContent(string $message): bool
@@ -727,6 +1035,8 @@ Mode hiện tại: {$mode}
             'bmi_label' => $ctx['bmi_label'],
             'calories_in' => $ctx['calo_nap'],
             'calories_out' => $ctx['calo_dot'],
+            'water_today_ml' => $ctx['water_today_ml'],
+            'water_goal_ml' => $ctx['water_goal_ml'],
             'protein' => $ctx['protein'],
             'carb' => $ctx['carb'],
             'fat' => $ctx['fat'],
@@ -767,10 +1077,14 @@ Mode hiện tại: {$mode}
             'protein' => 0,
             'carb' => 0,
             'fat' => 0,
+            'water_today_ml' => 0,
+            'water_goal_ml' => 0,
+            'water_context' => '',
             'meal_summary' => '',
             'activity_summary' => '',
             'nutrition_advice' => '',
             'benh_nen' => '',
+            'medical_context_ai' => '',
             'the_trang' => '',
             'muc_do_van_dong' => '',
             'che_do_an' => '',
@@ -782,6 +1096,14 @@ Mode hiện tại: {$mode}
             if (is_string($value)) {
                 $ctx[$key] = $this->repairMojibake($value);
             }
+        }
+
+        if (trim((string) $ctx['medical_context_ai']) !== '') {
+            $ctx['benh_nen'] = $ctx['medical_context_ai'];
+        }
+
+        if (trim((string) $ctx['water_context']) !== '') {
+            $ctx['activity_summary'] = trim((string) $ctx['activity_summary'] . "\n- Nuoc: " . $ctx['water_context']);
         }
 
         return $ctx;

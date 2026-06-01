@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends Controller
 {
@@ -226,6 +228,18 @@ class AuthController extends Controller
             'password' => 'nullable|required_with:reset_code|string|min:6|confirmed',
         ]);
 
+        $normalizedEmail = strtolower($data['email']);
+        $rateKey = 'forgot-password:' . $normalizedEmail . '|' . $request->ip();
+
+        if (RateLimiter::tooManyAttempts($rateKey, 5)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ban thao tac qua nhieu lan. Vui long thu lai sau ' . RateLimiter::availableIn($rateKey) . ' giay.',
+            ], 429);
+        }
+
+        RateLimiter::hit($rateKey, 60);
+
         $user = DB::table('taikhoan')
             ->where('Email', $data['email'])
             ->first();
@@ -237,15 +251,37 @@ class AuthController extends Controller
             ]);
         }
 
-        $cacheKey = 'password_reset:' . strtolower($data['email']);
+        $cacheKey = 'password_reset:' . $normalizedEmail;
 
         if (empty($data['reset_code'])) {
             $code = (string) random_int(100000, 999999);
             Cache::put($cacheKey, Hash::make($code), now()->addMinutes(10));
 
+            try {
+                Mail::raw(
+                    "Ma dat lai mat khau cua ban la: {$code}\n\nMa nay co hieu luc trong 10 phut. Neu ban khong yeu cau dat lai mat khau, hay bo qua email nay.",
+                    function ($message) use ($data) {
+                        $message
+                            ->to($data['email'])
+                            ->subject('Ma dat lai mat khau Salud');
+                    }
+                );
+            } catch (\Throwable $exception) {
+                Cache::forget($cacheKey);
+                Log::error('Failed to send password reset email', [
+                    'email' => $data['email'],
+                    'message' => $exception->getMessage(),
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Khong the gui email dat lai mat khau. Vui long thu lai sau.',
+                ], 500);
+            }
+
             $response = [
                 'success' => true,
-                'message' => 'Mã đặt lại mật khẩu có hiệu lực trong 10 phút.',
+                'message' => 'Ma dat lai mat khau da duoc gui den email cua ban. Ma co hieu luc trong 10 phut.',
                 'requires_code' => true,
             ];
 

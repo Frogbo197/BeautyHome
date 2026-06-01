@@ -45,9 +45,11 @@ class HealthContextService
 
         [$caloriesIn, $protein, $carb, $fat, $mealSummary] = $this->mealContext($userId, $today);
         [$caloriesOut, $minutes, $steps, $activitySummary] = $this->activityContext($userId, $today);
+        [$waterTodayMl, $waterGoalMl, $waterContext] = $this->waterContext($userId, $today, $weight);
         $balance = $caloriesIn - $caloriesOut;
         [$bmiLabel, $bmiAdvice] = $this->bmiLabelAndAdvice($bmi);
         $scoreRecord = DiemSucKhoe::where('NguoiDungID', $userId)->latest('ID')->first();
+        $conditionText = (string) ($health->BenhNen ?? '');
 
         return [
             'user_id' => $userId,
@@ -69,12 +71,16 @@ class HealthContextService
             'fat' => round($fat, 1),
             'activity_minutes' => (int) $minutes,
             'steps' => (int) $steps,
+            'water_today_ml' => (int) round($waterTodayMl),
+            'water_goal_ml' => (int) round($waterGoalMl),
+            'water_context' => $waterContext,
             'meal_summary' => $mealSummary,
             'activity_summary' => $activitySummary,
             'health_score' => (int) ($scoreRecord->Diem ?? 70),
             'nutrition_advice' => $this->nutritionAdvice($caloriesIn, $protein, $carb, $fat),
             'nhom_mau' => $health->NhomMau ?? '',
-            'benh_nen' => $health->BenhNen ?? '',
+            'benh_nen' => $conditionText,
+            'medical_context_ai' => $this->medicalContextForAi($conditionText),
             'the_trang' => $health->TheTrang ?? '',
             'muc_do_van_dong' => $preferences->MucDoVanDong ?? '',
             'che_do_an' => $preferences->CheDoAn ?? '',
@@ -190,6 +196,112 @@ class HealthContextService
             $steps,
             empty($lines) ? 'Chưa ghi nhận hoạt động hôm nay.' : implode("\n", $lines),
         ];
+    }
+
+    private function waterContext(int $userId, string $date, float $weightKg): array
+    {
+        $goal = $this->waterGoal($userId, $weightKg);
+        if (!Schema::hasTable('theodoinuoc')) {
+            return [0, $goal, 'Chua co bang theo doi nuoc.'];
+        }
+
+        $total = (float) DB::table('theodoinuoc')
+            ->where('NguoiDungID', $userId)
+            ->whereDate('Ngay', $date)
+            ->sum('LuongNuoc');
+
+        if ($total <= 0) {
+            return [$total, $goal, "Hom nay chua ghi nhan nuoc uong. Muc tieu {$goal} ml."];
+        }
+
+        $ratio = $total / max($goal, 1);
+        if ($ratio >= 0.9 && $ratio <= 1.3) {
+            return [$total, $goal, "Hom nay da uong {$total} ml, gan dat muc tieu {$goal} ml."];
+        }
+
+        if ($ratio < 0.9) {
+            $missing = max(0, $goal - $total);
+            return [$total, $goal, "Hom nay da uong {$total} ml, con thieu khoang {$missing} ml so voi muc tieu {$goal} ml."];
+        }
+
+        return [$total, $goal, "Hom nay da uong {$total} ml, cao hon muc tieu {$goal} ml; can ca nhan hoa neu co benh nen."];
+    }
+
+    private function waterGoal(int $userId, float $weightKg): int
+    {
+        if (Schema::hasTable('user_goals')) {
+            $goal = DB::table('user_goals')
+                ->where('NguoiDungID', $userId)
+                ->where('Loai', 'UongNuoc')
+                ->value('GiaTri');
+            if ($goal) {
+                return (int) $goal;
+            }
+        }
+
+        if (
+            Schema::hasTable('muctieusuckhoe')
+            && Schema::hasColumn('muctieusuckhoe', 'GiaTriMucTieu')
+        ) {
+            $goal = DB::table('muctieusuckhoe')
+                ->where('NguoiDungID', $userId)
+                ->where(function ($query) {
+                    if (Schema::hasColumn('muctieusuckhoe', 'LoaiMucTieu')) {
+                        $query->whereIn('LoaiMucTieu', ['Nuoc', 'UongNuoc', 'Uong nuoc']);
+                    }
+                    $query
+                        ->orWhere('TenMucTieu', 'like', '%nuoc%')
+                        ->orWhere('TenMucTieu', 'like', '%nước%');
+                })
+                ->whereNotNull('GiaTriMucTieu')
+                ->latest('ID')
+                ->value('GiaTriMucTieu');
+            if ($goal) {
+                return (int) $goal;
+            }
+        }
+
+        if ($weightKg > 0) {
+            return (int) min(max($weightKg * 35, 1500), 3000);
+        }
+
+        return 2000;
+    }
+
+    private function medicalContextForAi(string $condition): string
+    {
+        $condition = trim($condition);
+        if ($condition === '' || $this->containsAnyCondition($condition, ['khong', 'khong co', 'none', 'no'])) {
+            return '';
+        }
+
+        if ($this->containsAnyCondition($condition, [
+            'hiv',
+            'aids',
+            'ung thu',
+            'ung thư',
+            'cancer',
+            'tam than',
+            'tâm thần',
+            'tram cam',
+            'trầm cảm',
+        ])) {
+            return 'Nguoi dung co benh nen nhay cam; chi dua loi khuyen chung, than trong, khong neu ten benh va khong chan doan.';
+        }
+
+        return $condition;
+    }
+
+    private function containsAnyCondition(string $value, array $needles): bool
+    {
+        $plain = mb_strtolower($value, 'UTF-8');
+        foreach ($needles as $needle) {
+            if (str_contains($plain, mb_strtolower($needle, 'UTF-8'))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function goals(int $userId): string
