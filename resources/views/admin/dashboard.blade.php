@@ -3,322 +3,641 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin - Trợ lý sức khỏe</title>
+    <title>Quản trị Salud</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/tabler-icons.min.css">
     <style>
         :root {
-            --ink: #243044;
-            --muted: #6f7c91;
-            --line: #e7edf7;
-            --bg: #f7fbff;
-            --white: #ffffff;
-            --mint: #cff4df;
-            --mint-strong: #48ad7d;
-            --rose: #ffd7e1;
-            --rose-strong: #e77391;
-            --lavender: #ded9ff;
-            --lavender-strong: #7c70d4;
-            --sky: #d8f0ff;
-            --sky-strong: #529fc9;
-            --peach: #ffe2c7;
-            --shadow: 0 20px 52px rgba(86, 105, 139, .15);
+            --blue: #4fc3f7;
+            --blue-dark: #0288d1;
+            --blue-soft: #e1f5fe;
+            --blue-mid: #b3e5fc;
+            --mint: #b2dfdb;
+            --mint-dark: #26a69a;
+            --rose: #ffcdd2;
+            --rose-dark: #e57373;
+            --lavender: #e8eaf6;
+            --lavender-dark: #5c6bc0;
+            --peach: #ffe0b2;
+            --peach-dark: #fb8c00;
+            --yellow: #fff59d;
+            --cream: #fffde7;
+            --bg: #f0f8ff;
+            --white: #fff;
+            --ink: #26384d;
+            --muted: #78909c;
+            --line: #e3f2fd;
+            --sidebar: 264px;
+            --topbar: 72px;
+            --radius: 14px;
+            --radius-sm: 10px;
+            --font-main: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-head: 'Baloo 2', var(--font-main);
         }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { min-width: 0; overflow-x: hidden; }
         body {
-            margin: 0;
             min-height: 100vh;
+            background: var(--bg);
             color: var(--ink);
-            background:
-                linear-gradient(135deg, rgba(222, 217, 255, .62), transparent 30%),
-                linear-gradient(230deg, rgba(207, 244, 223, .72), transparent 36%),
-                var(--bg);
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-family: var(--font-main);
+            font-size: 14px;
         }
         button, input, select, textarea { font: inherit; }
         button { cursor: pointer; }
-        a { color: inherit; }
+        [hidden] { display: none !important; }
 
-        .shell {
-            display: grid;
-            grid-template-columns: 260px minmax(0, 1fr);
-            min-height: 100vh;
-        }
         .sidebar {
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            padding: 26px 20px;
-            background: rgba(255, 255, 255, .72);
-            border-right: 1px solid rgba(231, 237, 247, .9);
-            backdrop-filter: blur(16px);
+            position: fixed;
+            inset: 0 auto 0 0;
+            z-index: 100;
+            width: var(--sidebar);
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+            background: linear-gradient(180deg, #4fc3f7 0%, #75cff8 42%, #aee6fb 100%);
+            box-shadow: 4px 0 24px rgba(79, 195, 247, .24);
         }
-        .brand {
+        .sidebar-logo {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 30px;
+            padding: 22px 18px 18px;
+            border-bottom: 1.5px solid rgba(255, 255, 255, .38);
         }
-        .brand-mark {
+        .logo-circle {
             display: grid;
-            width: 46px;
-            height: 46px;
+            width: 54px;
+            height: 54px;
             place-items: center;
-            border-radius: 8px;
-            background: linear-gradient(135deg, var(--mint), var(--lavender));
-            color: #36516f;
-            font-weight: 850;
-            box-shadow: 0 12px 28px rgba(124, 112, 212, .2);
-        }
-        .brand strong { display: block; line-height: 1.15; }
-        .small, .brand span, .nav-label { color: var(--muted); font-size: 13px; }
-        .nav { display: grid; gap: 8px; }
-        .nav a {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            min-height: 42px;
-            padding: 0 12px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 700;
-        }
-        .nav a:hover, .nav a.active {
-            background: var(--white);
-            box-shadow: 0 10px 24px rgba(84, 104, 140, .12);
-        }
-        .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 999px;
-            background: var(--mint-strong);
-        }
-
-        .main { padding: 30px; overflow: hidden; }
-        .topbar {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 18px;
-            margin-bottom: 22px;
-        }
-        h1 {
-            margin: 0 0 8px;
-            font-size: clamp(27px, 4vw, 42px);
-            line-height: 1;
-            letter-spacing: 0;
-        }
-        h2 { margin: 0; font-size: 18px; letter-spacing: 0; }
-        h3 { margin: 0; font-size: 15px; letter-spacing: 0; }
-
-        .grid { display: grid; gap: 16px; }
-        [data-view-panel][hidden] { display: none !important; }
-        .overview { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-        .layout { grid-template-columns: minmax(0, 1.45fr) minmax(330px, .95fr); align-items: start; }
-        .side-stack { display: grid; gap: 16px; }
-        .card {
-            border: 1px solid rgba(231, 237, 247, .92);
-            border-radius: 8px;
-            background: rgba(255, 255, 255, .85);
-            box-shadow: var(--shadow);
-        }
-        .panel { padding: 18px; }
-        .panel-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 14px;
-        }
-        .stat {
-            position: relative;
-            min-height: 132px;
-            overflow: hidden;
-            padding: 18px;
-        }
-        .stat::after {
-            content: "";
-            position: absolute;
-            right: 0;
-            bottom: -24px;
-            width: 78px;
-            height: 78px;
             border-radius: 50%;
-            opacity: .68;
+            background: var(--white);
+            color: var(--peach-dark);
+            font-size: 24px;
+            box-shadow: 0 8px 18px rgba(2, 136, 209, .16);
         }
-        .stat.mint::after { background: var(--mint); }
-        .stat.rose::after { background: var(--rose); }
-        .stat.lavender::after { background: var(--lavender); }
-        .stat.sky::after { background: var(--sky); }
-        .stat-label {
-            color: var(--muted);
+        .logo-text {
+            color: var(--white);
+            font-family: var(--font-head);
+            font-size: 23px;
+            font-weight: 800;
+            line-height: 1;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, .14);
+        }
+        .logo-text span {
+            display: block;
+            margin-top: 4px;
+            font-family: var(--font-main);
             font-size: 12px;
             font-weight: 800;
+            opacity: .9;
+        }
+        .sidebar-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 12px;
+        }
+        .nav-section {
+            padding: 12px 10px 7px;
+            color: rgba(255, 255, 255, .72);
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: .08em;
             text-transform: uppercase;
         }
-        .stat-value { margin: 10px 0 4px; font-size: 36px; font-weight: 850; }
-
-        .btn {
-            min-height: 40px;
-            border: 0;
-            border-radius: 8px;
-            padding: 0 13px;
-            color: var(--white);
-            background: var(--ink);
-            font-weight: 800;
-            box-shadow: 0 12px 28px rgba(36, 48, 68, .16);
-        }
-        .btn.secondary {
-            color: var(--ink);
-            background: var(--white);
-            border: 1px solid var(--line);
-            box-shadow: none;
-        }
-        .btn.danger { background: var(--rose-strong); }
-        .btn.good { background: var(--mint-strong); }
-        .btn.small-btn { min-height: 32px; padding: 0 10px; font-size: 12px; }
-        .btn:disabled { opacity: .55; cursor: wait; }
-
-        .actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
-        .filters { display: grid; grid-template-columns: minmax(180px, 1fr) 150px; gap: 10px; margin-bottom: 14px; }
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .field {
+        .nav-item {
             width: 100%;
-            min-height: 40px;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            padding: 0 12px;
-            color: var(--ink);
-            background: rgba(255, 255, 255, .94);
-            outline: none;
-        }
-        textarea.field { min-height: 96px; padding-top: 10px; resize: vertical; }
-        .field:focus {
-            border-color: var(--lavender-strong);
-            box-shadow: 0 0 0 4px rgba(124, 112, 212, .14);
-        }
-        .check-row { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
-
-        .table-wrap { overflow-x: auto; }
-        table { width: 100%; min-width: 820px; border-collapse: collapse; }
-        th, td { padding: 13px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
-        th { color: var(--muted); font-size: 12px; text-transform: uppercase; }
-        .resource-table { min-width: 620px; }
-        .resource-editor {
-            display: grid;
+            border: 0;
+            display: flex;
+            align-items: center;
             gap: 10px;
-            margin-bottom: 14px;
-            padding: 12px;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            background: rgba(255, 255, 255, .62);
+            min-height: 46px;
+            padding: 0 14px;
+            margin-bottom: 4px;
+            border-radius: 12px;
+            background: transparent;
+            color: rgba(255, 255, 255, .92);
+            font-weight: 900;
+            text-align: left;
+            transition: .18s ease;
+            white-space: nowrap;
         }
-        .resource-editor[hidden] { display: none !important; }
-
-        .user-cell { display: flex; align-items: center; gap: 10px; }
-        .avatar {
-            flex: 0 0 auto;
+        .nav-item i { width: 20px; font-size: 20px; text-align: center; }
+        .nav-item:hover { background: rgba(255, 255, 255, .22); color: var(--white); }
+        .nav-item.active {
+            background: var(--white);
+            color: var(--blue-dark);
+            box-shadow: 0 8px 18px rgba(2, 136, 209, .13);
+        }
+        .nav-badge {
+            margin-left: auto;
+            min-width: 24px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: var(--rose-dark);
+            color: var(--white);
+            font-size: 11px;
+            font-weight: 900;
+            text-align: center;
+        }
+        .sidebar-footer {
+            padding: 14px;
+            border-top: 1.5px solid rgba(255, 255, 255, .28);
+        }
+        .admin-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            padding: 10px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, .24);
+            color: var(--white);
+        }
+        .admin-avatar {
             display: grid;
             width: 38px;
             height: 38px;
             place-items: center;
-            border-radius: 8px;
-            color: #36617b;
-            background: var(--sky);
-            font-weight: 850;
-            overflow: hidden;
+            border-radius: 50%;
+            background: var(--white);
+            color: var(--lavender-dark);
+            font-size: 20px;
         }
-        .avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            min-height: 28px;
-            border-radius: 999px;
-            padding: 0 10px;
-            font-size: 12px;
-            font-weight: 850;
-        }
-        .badge.active { color: #267253; background: var(--mint); }
-        .badge.locked { color: #a2415a; background: var(--rose); }
-        .mini-stats { display: flex; flex-wrap: wrap; gap: 6px; }
-        .mini-stats span {
-            border-radius: 999px;
-            background: #f3f6fb;
-            padding: 6px 8px;
-            color: var(--muted);
-            font-size: 12px;
-            font-weight: 750;
-        }
+        .admin-name { font-weight: 900; }
+        .admin-role { font-size: 11px; opacity: .8; }
 
-        .feature-list, .notice-list, .detail-list { display: grid; gap: 10px; }
-        .feature-item, .notice-item, .detail-item {
-            padding: 12px;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            background: rgba(255, 255, 255, .68);
+        .main {
+            margin-left: var(--sidebar);
+            min-height: 100vh;
+            min-width: 0;
         }
-        .feature-item {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 70;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            height: var(--topbar);
+            padding: 0 28px;
+            background: rgba(255, 255, 255, .96);
+            border-bottom: 1.5px solid var(--line);
+            box-shadow: 0 2px 12px rgba(79, 195, 247, .09);
+        }
+        .topbar-title {
+            display: flex;
             align-items: center;
             gap: 10px;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            color: var(--blue-dark);
+            font-family: var(--font-head);
+            font-size: 24px;
+            font-weight: 800;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
-        .feature-value {
+        .topbar-search {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: min(320px, 28vw);
+            min-height: 40px;
+            padding: 0 14px;
+            border: 1.5px solid var(--blue-mid);
+            border-radius: 999px;
+            background: var(--bg);
+            color: var(--muted);
+        }
+        .topbar-search input {
+            width: 100%;
+            min-width: 0;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: var(--ink);
+        }
+        .topbar-circle {
+            position: relative;
             display: grid;
-            min-width: 54px;
-            min-height: 38px;
+            width: 44px;
+            height: 44px;
             place-items: center;
-            border-radius: 8px;
-            background: var(--peach);
-            font-weight: 850;
+            border: 1.5px solid var(--blue-mid);
+            border-radius: 50%;
+            background: var(--bg);
+            color: var(--blue-dark);
+            font-size: 18px;
+            font-weight: 900;
         }
-        .notice-meta {
+        .topbar-circle .dot {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--rose-dark);
+            border: 1.5px solid var(--white);
+        }
+        .topbar-avatar {
+            display: grid;
+            width: 46px;
+            height: 46px;
+            place-items: center;
+            border-radius: 50%;
+            color: var(--white);
+            background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+            font-size: 20px;
+            font-weight: 900;
+            box-shadow: 0 4px 14px rgba(2, 136, 209, .25);
+        }
+
+        .page {
+            display: none;
+            min-width: 0;
+            padding: 28px 34px 42px;
+        }
+        .page.active { display: block; }
+        .section-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 8px;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .section-title {
+            color: #0277bd;
+            font-family: var(--font-head);
+            font-size: 28px;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+        .section-subtitle {
+            margin-top: 4px;
             color: var(--muted);
-            font-size: 12px;
-            margin-bottom: 6px;
+            font-size: 14px;
         }
-        .bars {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            align-items: end;
-            gap: 10px;
-            height: 150px;
-            padding: 12px;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            background: rgba(255, 255, 255, .58);
+        .card {
+            min-width: 0;
+            border: 1.5px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--white);
+            padding: 22px 24px;
         }
-        .bar-cell {
-            display: grid;
-            align-items: end;
-            justify-items: center;
+        .card-title {
+            display: flex;
+            align-items: center;
             gap: 8px;
-            height: 100%;
-            color: var(--muted);
-            font-size: 12px;
+            margin-bottom: 16px;
+            color: var(--blue-dark);
+            font-family: var(--font-head);
+            font-size: 19px;
+            font-weight: 800;
         }
-        .bar {
+        .card-title i { font-size: 20px; }
+        .grid { display: grid; gap: 18px; min-width: 0; }
+        .grid-2 { grid-template-columns: minmax(0, 1.5fr) minmax(320px, .85fr); }
+        .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .grid-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
+        .stat-card, .risk-card {
+            position: relative;
+            min-width: 0;
+            overflow: hidden;
+            min-height: 132px;
+            padding: 20px 22px;
+            border: 2px solid transparent;
+            border-radius: var(--radius);
+            background: var(--white);
+            transition: transform .18s ease, box-shadow .18s ease;
+        }
+        .stat-card:hover, .risk-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, .07);
+        }
+        .stat-card::before, .risk-card::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto;
+            height: 4px;
+        }
+        .tone-blue { border-color: var(--blue-mid); }
+        .tone-blue::before { background: linear-gradient(90deg, var(--blue), #81d4fa); }
+        .tone-mint { border-color: var(--mint); }
+        .tone-mint::before { background: linear-gradient(90deg, var(--mint-dark), #80cbc4); }
+        .tone-rose { border-color: var(--rose); }
+        .tone-rose::before { background: linear-gradient(90deg, var(--rose-dark), #ef9a9a); }
+        .tone-lavender { border-color: #c5cae9; }
+        .tone-lavender::before { background: linear-gradient(90deg, var(--lavender-dark), #9fa8da); }
+        .tone-peach { border-color: var(--peach); }
+        .tone-peach::before { background: linear-gradient(90deg, var(--peach-dark), #ffb74d); }
+        .stat-icon {
+            display: grid;
+            width: 52px;
+            height: 52px;
+            place-items: center;
+            margin-bottom: 14px;
+            border-radius: 12px;
+            background: var(--blue-soft);
+            color: var(--blue-dark);
+            font-size: 24px;
+        }
+        .tone-rose .stat-icon { background: #ffebee; color: #c62828; }
+        .tone-mint .stat-icon { background: #e0f2f1; color: #00897b; }
+        .tone-lavender .stat-icon { background: var(--lavender); color: #3949ab; }
+        .tone-peach .stat-icon { background: #fff3e0; color: #e65100; }
+        .stat-value {
+            color: #121b73;
+            font-family: var(--font-head);
+            font-size: 34px;
+            font-weight: 800;
+            line-height: 1;
+        }
+        .stat-label { margin-top: 6px; color: #37474f; font-size: 14px; font-weight: 900; }
+        .stat-note { margin-top: 4px; color: #90a4ae; font-size: 12px; overflow-wrap: anywhere; }
+
+        .risk-card {
+            border-radius: 18px;
+            cursor: pointer;
+            text-align: left;
+        }
+        .risk-card .stat-value { font-size: 30px; }
+        .risk-card button { margin-top: 14px; }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 220px;
+            max-width: 420px;
+            min-height: 42px;
+            padding: 0 14px;
+            border: 1.5px solid var(--blue-mid);
+            border-radius: 999px;
+            background: var(--bg);
+        }
+        .search-box input {
+            flex: 1;
+            min-width: 0;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: var(--ink);
+        }
+        .field, .filter-select {
             width: 100%;
-            min-height: 8px;
-            border-radius: 8px 8px 3px 3px;
-            background: linear-gradient(180deg, var(--lavender), var(--sky));
+            min-height: 42px;
+            border: 1.5px solid var(--blue-mid);
+            border-radius: 12px;
+            outline: 0;
+            background: var(--bg);
+            color: var(--ink);
+            padding: 9px 13px;
         }
-        .empty, .loading { padding: 24px; text-align: center; color: var(--muted); }
+        .filter-select {
+            width: auto;
+            min-width: 150px;
+            border-radius: 999px;
+            padding-inline: 16px;
+        }
+        textarea.field { min-height: 112px; resize: vertical; }
+        .field:focus, .filter-select:focus, .search-box:focus-within {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(79, 195, 247, .18);
+        }
+        .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .form-group { display: grid; gap: 7px; }
+        .form-label { color: #455a64; font-size: 13px; font-weight: 900; }
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+            padding-top: 18px;
+            border-top: 1.5px solid var(--line);
+        }
+        .check-row { display: flex; align-items: center; gap: 8px; color: var(--muted); font-weight: 800; }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            min-height: 40px;
+            border: 0;
+            border-radius: 999px;
+            padding: 0 18px;
+            background: var(--blue);
+            color: var(--white);
+            font-weight: 900;
+            text-decoration: none;
+            transition: .18s ease;
+            white-space: nowrap;
+        }
+        .btn:hover { background: var(--blue-dark); }
+        .btn-ghost {
+            border: 1.5px solid var(--blue-mid);
+            background: var(--white);
+            color: var(--blue-dark);
+        }
+        .btn-ghost:hover { background: var(--blue-soft); }
+        .btn-danger { background: var(--rose); color: #c62828; }
+        .btn-danger:hover { background: #ef9a9a; }
+        .btn-success { background: var(--mint); color: #004d40; }
+        .btn-success:hover { background: #80cbc4; }
+        .btn-warning { background: var(--peach); color: #bf360c; }
+        .btn-warning:hover { background: #ffcc80; }
+        .btn-sm { min-height: 32px; padding: 0 12px; font-size: 12px; }
+        .btn:disabled { opacity: .55; cursor: wait; }
+        .actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+        .table-wrap {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            border-radius: var(--radius-sm);
+        }
+        .data-table {
+            width: 100%;
+            min-width: 800px;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .data-table th {
+            padding: 12px 14px;
+            border-bottom: 2px solid var(--blue-mid);
+            background: var(--blue-soft);
+            color: #0277bd;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: .05em;
+            text-align: left;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .data-table th:first-child { border-radius: 10px 0 0 0; }
+        .data-table th:last-child { border-radius: 0 10px 0 0; }
+        .data-table td {
+            padding: 13px 14px;
+            border-bottom: 1px solid var(--line);
+            color: #37474f;
+            vertical-align: middle;
+            overflow-wrap: anywhere;
+        }
+        .data-table tr:hover td { background: var(--bg); }
+
+        .avatar-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .avatar {
+            display: grid;
+            width: 40px;
+            height: 40px;
+            place-items: center;
+            flex: 0 0 auto;
+            overflow: hidden;
+            border-radius: 50%;
+            background: var(--blue-mid);
+            color: #0277bd;
+            font-weight: 900;
+        }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar-lg { width: 96px; height: 96px; font-size: 34px; }
+        .primary-text { color: var(--ink); font-weight: 900; }
+        .muted { color: var(--muted); font-size: 12.5px; }
+        .badge, .tag, .macro-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            min-height: 26px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+        .badge-active { background: var(--mint); color: #004d40; }
+        .badge-locked { background: var(--rose); color: #b71c1c; }
+        .badge-high { background: var(--rose); color: #b71c1c; }
+        .badge-medium { background: var(--peach); color: #bf360c; }
+        .badge-low { background: #fff9c4; color: #f57f17; }
+        .badge-info { background: var(--blue-mid); color: #01579b; }
+        .badge-done { background: var(--mint); color: #00695c; }
+        .tag-mint, .macro-p { background: var(--mint); color: #00695c; }
+        .tag-yellow, .macro-c { background: #fff9c4; color: #f57f17; }
+        .tag-rose, .macro-f { background: var(--rose); color: #ad1457; }
+        .tag-blue { background: var(--blue-mid); color: #01579b; }
+        .tag-lavender { background: var(--lavender); color: #283593; }
+        .mini-stats { display: flex; flex-wrap: wrap; gap: 7px; }
+        .mini-stats span {
+            padding: 6px 9px;
+            border-radius: 999px;
+            background: #f3f6fb;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .notice-list { display: grid; gap: 12px; }
+        .notice-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            min-width: 0;
+            padding: 14px 16px;
+            border: 1.5px solid var(--line);
+            border-radius: 14px;
+            background: var(--white);
+        }
+        .notice-card.alert-high { border-color: #ffab91; background: #fff8f3; }
+        .notice-card.alert-medium { border-color: #ffcc80; background: #fffdf1; }
+        .notice-icon {
+            display: grid;
+            width: 38px;
+            height: 38px;
+            place-items: center;
+            flex: 0 0 auto;
+            border-radius: 50%;
+            background: var(--blue-soft);
+            color: var(--blue-dark);
+            font-size: 18px;
+        }
+        .notice-title { color: #37474f; font-size: 14px; font-weight: 900; }
+        .notice-msg { margin-top: 3px; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+
+        .empty-state {
+            display: grid;
+            place-items: center;
+            min-height: 220px;
+            padding: 26px;
+            text-align: center;
+            color: var(--muted);
+        }
+        .empty-icon {
+            display: grid;
+            width: 62px;
+            height: 62px;
+            place-items: center;
+            margin-bottom: 12px;
+            border-radius: 18px;
+            background: var(--blue-soft);
+            color: var(--blue-dark);
+            font-size: 30px;
+        }
+        .empty-title { color: var(--ink); font-size: 18px; font-weight: 900; }
+        .empty-desc { margin: 6px auto 14px; max-width: 360px; }
+        .loading-skeleton {
+            display: grid;
+            gap: 12px;
+            padding: 14px;
+        }
+        .skeleton-line {
+            height: 18px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #e9f7ff, #fff, #e9f7ff);
+            background-size: 240% 100%;
+            animation: pulse 1.2s ease infinite;
+        }
+        @keyframes pulse {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        .resource-editor {
+            display: grid;
+            gap: 14px;
+            margin-bottom: 18px;
+            padding: 16px;
+            border: 1.5px solid var(--blue-mid);
+            border-radius: var(--radius);
+            background: var(--bg);
+        }
+        .resource-editor[hidden] { display: none !important; }
 
         .drawer {
             position: fixed;
             inset: 0 0 0 auto;
-            z-index: 10;
+            z-index: 230;
             display: grid;
-            width: min(560px, 100vw);
-            max-width: 100vw;
             grid-template-rows: auto minmax(0, 1fr);
-            background: rgba(255, 255, 255, .96);
-            border-left: 1px solid var(--line);
+            width: min(960px, calc(100vw - 24px));
+            max-width: 100vw;
+            background: rgba(255, 255, 255, .99);
+            border-left: 1.5px solid var(--line);
             box-shadow: -24px 0 60px rgba(36, 48, 68, .18);
             transform: translateX(102%);
             transition: transform .24s ease;
@@ -326,35 +645,129 @@
         .drawer.open { transform: translateX(0); }
         .drawer-head {
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: flex-start;
             gap: 12px;
-            padding: 18px;
+            padding: 18px 22px;
+            border-bottom: 1.5px solid var(--line);
+        }
+        .drawer-body { overflow: auto; padding: 20px 22px 24px; }
+        .profile-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 20px; align-items: start; }
+        .profile-card { text-align: center; }
+        .profile-name { margin-top: 12px; color: var(--blue-dark); font-family: var(--font-head); font-size: 23px; font-weight: 800; }
+        .profile-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 18px; }
+        .profile-stat {
+            padding: 12px;
+            border-radius: 12px;
+            background: var(--bg);
+        }
+        .profile-stat strong { display: block; color: var(--blue-dark); font-size: 20px; }
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 18px;
+            padding: 4px;
+            border-radius: 12px;
+            background: var(--blue-soft);
+            overflow-x: auto;
+        }
+        .tab {
+            border: 0;
+            flex: 0 0 auto;
+            padding: 9px 16px;
+            border-radius: 9px;
+            background: transparent;
+            color: #546e7a;
+            font-weight: 900;
+        }
+        .tab.active { background: var(--white); color: var(--blue-dark); box-shadow: 0 2px 8px rgba(0, 0, 0, .08); }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+        .info-grid { display: grid; gap: 10px; }
+        .info-row {
+            display: grid;
+            grid-template-columns: 170px minmax(0, 1fr);
+            gap: 12px;
+            padding: 11px 0;
             border-bottom: 1px solid var(--line);
         }
-        .drawer-body { overflow: auto; padding: 18px; }
-        .drawer-section { margin-bottom: 18px; }
-        .drawer-section h3 { margin-bottom: 10px; }
+        .info-label { color: var(--muted); font-weight: 800; }
+        .info-value { color: var(--ink); font-weight: 800; overflow-wrap: anywhere; }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 240;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            background: rgba(36, 48, 68, .28);
+        }
+        .modal-backdrop.open { display: flex; }
+        .modal {
+            width: min(680px, 100%);
+            max-height: calc(100vh - 36px);
+            overflow: auto;
+            border-radius: 18px;
+            background: var(--white);
+            box-shadow: 0 18px 60px rgba(36, 48, 68, .24);
+        }
+        .modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 18px 20px;
+            border-bottom: 1.5px solid var(--line);
+        }
+        .modal-body { padding: 20px; }
+        .user-picker {
+            position: relative;
+            display: grid;
+            gap: 10px;
+        }
+        .picker-results {
+            display: grid;
+            max-height: 220px;
+            overflow: auto;
+            gap: 8px;
+            padding: 8px;
+            border: 1.5px solid var(--blue-mid);
+            border-radius: 12px;
+            background: var(--bg);
+        }
+        .picker-item {
+            border: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 9px;
+            border-radius: 10px;
+            background: var(--white);
+            text-align: left;
+        }
+        .picker-item:hover, .picker-item.active { outline: 2px solid var(--blue-mid); }
         .overlay {
             position: fixed;
             inset: 0;
-            z-index: 9;
+            z-index: 220;
             display: none;
             background: rgba(36, 48, 68, .22);
         }
         .overlay.open { display: block; }
-
         .toast {
             position: fixed;
             right: 22px;
             bottom: 22px;
-            z-index: 20;
+            z-index: 300;
             max-width: min(420px, calc(100vw - 44px));
             padding: 14px 16px;
-            border-radius: 8px;
+            border-radius: 12px;
             color: var(--white);
             background: var(--ink);
-            box-shadow: var(--shadow);
+            box-shadow: 0 10px 28px rgba(36, 48, 68, .2);
             opacity: 0;
             pointer-events: none;
             transform: translateY(18px);
@@ -362,334 +775,453 @@
         }
         .toast.show { opacity: 1; transform: translateY(0); }
 
-        @media (max-width: 1120px) {
-            .shell { grid-template-columns: 1fr; }
-            .sidebar { display: none; }
-            .overview, .layout { grid-template-columns: 1fr 1fr; }
-            .layout > .card:first-child { grid-column: 1 / -1; }
+        @media (max-width: 1180px) {
+            .sidebar { position: static; width: 100%; min-height: auto; }
+            .sidebar-logo { padding: 14px 16px; }
+            .sidebar-nav { padding: 10px; }
+            .sidebar-nav nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; }
+            .nav-section, .sidebar-footer { display: none; }
+            .main { margin-left: 0; }
+            .grid-2, .profile-layout { grid-template-columns: 1fr; }
+            .grid-5 { grid-template-columns: repeat(3, 1fr); }
         }
         @media (max-width: 760px) {
-            .main { padding: 18px; }
-            .topbar, .panel-head { display: grid; }
-            .actions, .btn { width: 100%; }
-            .overview, .layout, .filters, .form-grid { grid-template-columns: 1fr; }
+            body { font-size: 13px; }
+            .topbar { height: auto; min-height: 64px; padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; }
+            .topbar-search { width: 100%; grid-column: 1 / -1; }
+            .topbar-circle { display: none; }
+            .page { padding: 16px 12px 24px; }
+            .section-header { display: grid; }
+            .section-title { font-size: 24px; }
+            .grid-3, .grid-4, .grid-5, .form-grid { grid-template-columns: 1fr; }
+            .card { padding: 16px; }
+            .data-table { min-width: 760px; }
             .drawer { width: 100vw; }
+            .info-row { grid-template-columns: 1fr; gap: 4px; }
+            .btn, .filter-select { width: 100%; }
         }
     </style>
 </head>
 <body>
-    <div class="shell">
-        <aside class="sidebar">
-            <div class="brand">
-                <div class="brand-mark">AI</div>
-                <div>
-                    <strong>Admin Health</strong>
-                    <span>Trợ lý sức khỏe</span>
-                </div>
-            </div>
-            <div class="nav-label">Quản trị</div>
-            <nav class="nav" aria-label="Admin">
-                <a href="#overview" class="active" data-view-link="overview"><span class="dot"></span>Tổng quan</a>
-                <a href="#accounts" data-view-link="accounts"><span class="dot" style="background: var(--rose-strong)"></span>Tài khoản</a>
-                <a href="#sendNotice" data-view-link="sendNotice"><span class="dot" style="background: var(--lavender-strong)"></span>Gửi thông báo</a>
-                <a href="#alerts" data-view-link="alerts"><span class="dot" style="background: var(--rose-strong)"></span>Canh bao</a>
-                <a href="#resources" data-view-link="resources"><span class="dot" style="background: var(--sky-strong)"></span>Dữ liệu</a>
-            </nav>
-        </aside>
-
-        <main class="main">
-            <section class="topbar">
-                <div>
-                    <h1>Quản trị hệ thống</h1>
-                    <div class="small" id="generatedAt">Đang tải dữ liệu...</div>
-                </div>
-                <div class="actions">
-                    <button class="btn secondary" type="button" id="reloadBtn">Làm mới</button>
-                    <a class="btn secondary" href="/api/admin/stats" target="_blank" rel="noreferrer" style="display:inline-grid;place-items:center;text-decoration:none">API</a>
-                </div>
-            </section>
-
-            <section class="grid overview" id="overview" data-view-panel="overview">
-                <div class="loading card">Đang tải tổng quan...</div>
-            </section>
-
-            <section class="grid layout">
-                <div class="card panel" id="accounts" data-view-panel="accounts" hidden>
-                    <div class="panel-head">
-                        <div>
-                            <h2>Tài khoản người dùng</h2>
-                            <div class="small" id="accountMeta">Khóa/mở, xem chi tiết, sửa hồ sơ</div>
-                        </div>
-                    </div>
-                    <div class="filters">
-                        <input class="field" id="searchInput" type="search" placeholder="Tìm tên hoặc email">
-                        <select class="field" id="statusFilter" aria-label="Trạng thái tài khoản">
-                            <option value="">Tất cả</option>
-                            <option value="active">Đang hoạt động</option>
-                            <option value="locked">Đã khóa</option>
-                        </select>
-                    </div>
-                    <div class="table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Người dùng</th>
-                                    <th>Trạng thái</th>
-                                    <th>Hoạt động</th>
-                                    <th>Đăng nhập</th>
-                                    <th>Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody id="accountRows">
-                                <tr><td colspan="5" class="loading">Đang tải tài khoản...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="side-stack" data-view-panel="sendNotice" hidden>
-                    <section class="card panel" id="sendNotice">
-                        <div class="panel-head">
-                            <div>
-                                <h2>Gửi thông báo</h2>
-                                <div class="small">Gửi cho một tài khoản hoặc toàn bộ người dùng</div>
-                            </div>
-                        </div>
-                        <div class="form-grid">
-                            <input class="field" id="noticeUserId" type="number" min="1" placeholder="ID người nhận">
-                            <input class="field" id="noticeType" type="text" placeholder="Loại: Health, System..." value="HeThong">
-                        </div>
-                        <textarea class="field" id="noticeContent" style="margin-top:10px" placeholder="Nội dung thông báo"></textarea>
-                        <div class="panel-head" style="margin:10px 0 0">
-                            <label class="check-row"><input id="noticeAll" type="checkbox"> Gửi tất cả</label>
-                            <button class="btn good" type="button" id="sendNoticeBtn">Gửi</button>
-                        </div>
-                    </section>
-
-                    <section class="card panel" id="notifications">
-                        <div class="panel-head">
-                            <div>
-                                <h2>Thông báo gần đây</h2>
-                                <div class="small" id="noticeMeta">Theo bảng thongbao</div>
-                            </div>
-                        </div>
-                        <div id="notificationSummary" class="mini-stats"></div>
-                        <div class="notice-list" id="noticeList" style="margin-top:14px"></div>
-                    </section>
-
-                    <section class="card panel">
-                        <div class="panel-head">
-                            <div>
-                                <h2>7 ngày gần đây</h2>
-                                <div class="small">Tài khoản mới và thông báo</div>
-                            </div>
-                        </div>
-                        <div class="bars" id="weeklyBars"></div>
-                    </section>
-                </div>
-            </section>
-
-            <section class="grid layout" style="margin-top:16px">
-                <section class="card panel" id="alerts" data-view-panel="alerts" hidden>
-                    <div class="panel-head">
-                        <div>
-                            <h2>Canh bao suc khoe</h2>
-                            <div class="small">Tu dong ra soat can nang, thuoc, nuoc va calo bat thuong</div>
-                        </div>
-                    </div>
-                    <div id="alertList" class="notice-list"></div>
-                </section>
-
-                <section class="card panel" id="resources" data-view-panel="resources" hidden>
-                    <div class="panel-head">
-                        <div>
-                            <h2>Dữ liệu chức năng</h2>
-                            <div class="small">Xem nhanh thực phẩm, thuốc, nhắc nhở, điểm sức khỏe</div>
-                        </div>
-                        <select class="field" id="resourceType" style="max-width:190px">
-                            <option value="foods">Thực phẩm</option>
-                            <option value="medicines">Thuốc</option>
-                            <option value="reminders">Nhắc nhở</option>
-                            <option value="scores">Điểm sức khỏe</option>
-                        </select>
-                    </div>
-                    <div class="resource-editor" id="foodEditor">
-                        <h3 id="foodEditorTitle">Thêm thực phẩm</h3>
-                        <div class="form-grid">
-                            <input class="field" id="foodName" type="text" placeholder="Tên thực phẩm">
-                            <input class="field" id="foodUnit" type="text" placeholder="Đơn vị" value="Gram">
-                            <input class="field" id="foodCalories" type="number" min="0" step="0.1" placeholder="Calo / 100g">
-                            <input class="field" id="foodProtein" type="number" min="0" step="0.1" placeholder="Protein">
-                            <input class="field" id="foodCarb" type="number" min="0" step="0.1" placeholder="Carb">
-                            <input class="field" id="foodFat" type="number" min="0" step="0.1" placeholder="Chất béo">
-                            <input class="field" id="foodWeight" type="number" min="0" step="0.1" placeholder="Khối lượng gram" value="100">
-                            <input class="field" id="foodType" type="text" placeholder="Nhóm thực phẩm">
-                            <input class="field" id="foodKeywords" type="text" placeholder="Từ khóa tìm kiếm">
-                            <select class="field" id="foodHealthy">
-                                <option value="1">Lành mạnh</option>
-                                <option value="0">Hạn chế</option>
-                            </select>
-                        </div>
-                        <div class="actions" style="justify-content:flex-start">
-                            <button class="btn good" id="saveFoodBtn" type="button">Lưu thực phẩm</button>
-                            <button class="btn secondary" id="resetFoodBtn" type="button">Nhập mới</button>
-                        </div>
-                    </div>
-                    <div class="resource-editor" id="medicineEditor" hidden>
-                        <h3 id="medicineEditorTitle">Thêm thuốc</h3>
-                        <input class="field" id="medicineName" type="text" placeholder="Tên thuốc">
-                        <div class="form-grid">
-                            <input class="field" id="medicineDose" type="text" placeholder="Liều lượng">
-                            <input class="field" id="medicineUnit" type="text" placeholder="Đơn vị">
-                            <input class="field" id="medicineTimes" type="number" min="0" step="1" placeholder="Số lần/ngày">
-                            <input class="field" id="medicineActive" type="text" placeholder="Hoạt chất">
-                            <input class="field" id="medicineGroup" type="text" placeholder="Nhóm thuốc">
-                            <input class="field" id="medicineStatus" type="text" placeholder="Trạng thái" value="chua_den">
-                        </div>
-                        <textarea class="field" id="medicineDesc" placeholder="Mô tả"></textarea>
-                        <textarea class="field" id="medicineSideEffect" placeholder="Tác dụng phụ"></textarea>
-                        <textarea class="field" id="medicineWarning" placeholder="Cảnh báo"></textarea>
-                        <textarea class="field" id="medicineNote" placeholder="Ghi chú"></textarea>
-                        <div class="actions" style="justify-content:flex-start">
-                            <button class="btn good" id="saveMedicineBtn" type="button">Lưu thuốc</button>
-                            <button class="btn secondary" id="resetMedicineBtn" type="button">Nhập mới</button>
-                        </div>
-                    </div>
-                    <div class="table-wrap">
-                        <table class="resource-table">
-                            <thead id="resourceHead"></thead>
-                            <tbody id="resourceRows">
-                                <tr><td class="loading">Đang tải dữ liệu...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
-                <section class="card panel" id="features" data-view-panel="overview">
-                    <div class="panel-head">
-                        <div>
-                            <h2>Thông tin chức năng</h2>
-                            <div class="small">Tổng hợp theo từng module</div>
-                        </div>
-                    </div>
-                    <div class="feature-list" id="featureList"></div>
-                </section>
-            </section>
-        </main>
-    </div>
-
-    <div class="overlay" id="overlay"></div>
-    <aside class="drawer" id="drawer" aria-label="Chi tiết tài khoản">
-        <div class="drawer-head">
-            <div>
-                <h2 id="drawerTitle">Chi tiết tài khoản</h2>
-                <div class="small" id="drawerSubtitle"></div>
-            </div>
-            <button class="btn secondary small-btn" type="button" id="closeDrawer">Đóng</button>
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <div class="logo-circle">🔔</div>
+            <div class="logo-text">HealthAdmin<span>Quản trị hệ thống</span></div>
         </div>
-        <div class="drawer-body">
-            <section class="drawer-section">
-                <h3>Sửa hồ sơ</h3>
-                <div class="form-grid">
-                    <input class="field" id="editEmail" type="email" placeholder="Email">
-                    <input class="field" id="editName" type="text" placeholder="Tên">
-                    <select class="field" id="editGender">
-                        <option value="">Giới tính</option>
-                        <option value="Nam">Nam</option>
-                        <option value="Nữ">Nữ</option>
-                        <option value="Khác">Khác</option>
-                    </select>
-                    <input class="field" id="editBirthday" type="date">
-                    <input class="field" id="editHeight" type="number" min="0" placeholder="Chiều cao cm">
-                    <input class="field" id="editWeight" type="number" min="0" placeholder="Cân nặng kg">
+        <div class="sidebar-nav">
+            <div class="nav-section">Tổng quan</div>
+            <nav aria-label="Điều hướng quản trị">
+                <button class="nav-item active" type="button" data-view-link="dashboard">📊 Dashboard</button>
+                <button class="nav-item" type="button" data-view-link="users">👥 Người dùng <span class="nav-badge" id="navUserCount">0</span></button>
+                <button class="nav-item" type="button" data-view-link="alerts">⚠️ Cảnh báo sức khỏe <span class="nav-badge" id="navAlertCount">0</span></button>
+                <button class="nav-item" type="button" data-view-link="notifications">🔔 Thông báo <span class="nav-badge" id="navNoticeCount">0</span></button>
+                <button class="nav-item" type="button" data-view-link="foods">🥗 Thực phẩm</button>
+                <button class="nav-item" type="button" data-view-link="medicines">💊 Thuốc</button>
+                <button class="nav-item" type="button" data-view-link="activities">🏃 Hoạt động</button>
+                <button class="nav-item" type="button" data-view-link="reports">📈 Báo cáo</button>
+                <button class="nav-item" type="button" data-view-link="settings">⚙️ Cài đặt</button>
+            </nav>
+        </div>
+        <div class="sidebar-footer">
+            <div class="admin-chip">
+                <div class="admin-avatar">🤖</div>
+                <div>
+                    <div class="admin-name">Admin</div>
+                    <div class="admin-role">Quản trị viên</div>
                 </div>
-                <input class="field" id="editAvatar" type="text" placeholder="Link ảnh đại diện" style="margin-top:10px">
-                <div class="panel-head" style="margin:10px 0 0">
-                    <label class="check-row"><input id="editActive" type="checkbox"> Tài khoản hoạt động</label>
-                    <button class="btn" id="saveAccountBtn" type="button">Lưu hồ sơ</button>
-                </div>
-            </section>
-
-            <section class="drawer-section">
-                <h3>Đặt lại mật khẩu</h3>
-                <div class="form-grid">
-                    <input class="field" id="newPassword" type="text" placeholder="Mật khẩu mới, tối thiểu 6 ký tự">
-                    <button class="btn danger" id="resetPasswordBtn" type="button">Reset mật khẩu</button>
-                </div>
-            </section>
-
-            <section class="drawer-section">
-                <h3>Cập nhật chế độ</h3>
-                <div class="form-grid">
-                    <input class="field" id="modeGoals" type="text" placeholder="Mục tiêu, cách nhau bằng dấu phẩy">
-                    <select class="field" id="modeActivity">
-                        <option value="">Mức vận động</option>
-                        <option value="Ít vận động">Ít vận động</option>
-                        <option value="Trung bình">Trung bình</option>
-                        <option value="Cao">Cao</option>
-                    </select>
-                    <select class="field" id="modeDiet">
-                        <option value="">Chế độ ăn</option>
-                        <option value="Eat Clean">Eat Clean</option>
-                        <option value="Giảm cân">Giảm cân</option>
-                        <option value="Tăng cơ">Tăng cơ</option>
-                        <option value="Ăn chay">Ăn chay</option>
-                        <option value="Bình thường">Bình thường</option>
-                    </select>
-                    <input class="field" id="modeWaterGoal" type="number" min="0" placeholder="Mục tiêu nước ml/ngày">
-                </div>
-                <button class="btn good" id="saveModeBtn" type="button" style="margin-top:10px">Lưu chế độ</button>
-            </section>
-
-            <section class="drawer-section">
-                <h3>Tổng quan người dùng</h3>
-                <div class="mini-stats" id="drawerStats"></div>
-            </section>
-
-            <section class="drawer-section">
-                <h3>Sức khỏe</h3>
-                <div class="detail-list" id="healthDetails"></div>
-            </section>
-
-            <section class="drawer-section">
-                <h3>Hoạt động gần đây</h3>
-                <div class="detail-list" id="recentDetails"></div>
-            </section>
+            </div>
         </div>
     </aside>
+
+    <main class="main">
+        <header class="topbar">
+            <div class="topbar-title" id="topbarTitle">📊 Dashboard</div>
+            <div class="topbar-search">
+                <i class="ti ti-search"></i>
+                <input id="globalSearch" type="search" placeholder="Tìm kiếm...">
+            </div>
+            <div class="topbar-circle"><i class="ti ti-bell"></i><span class="dot"></span></div>
+            <div class="topbar-circle"><i class="ti ti-settings"></i></div>
+            <div class="topbar-avatar">A</div>
+        </header>
+
+        <section class="page active" id="page-dashboard" data-view-panel="dashboard">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Tổng quan hệ thống</div>
+                    <div class="section-subtitle" id="generatedAt">Đang tải dữ liệu...</div>
+                </div>
+                <button class="btn" type="button" id="reloadBtn"><i class="ti ti-refresh"></i>Làm mới</button>
+            </div>
+            <div class="grid grid-5" id="overviewStats">
+                <div class="loading-skeleton card" style="grid-column:1/-1">
+                    <div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div>
+                </div>
+            </div>
+
+            <div class="section-header" style="margin-top:26px">
+                <div>
+                    <div class="section-title" style="font-size:23px">Cảnh báo sức khỏe nổi bật</div>
+                    <div class="section-subtitle">Các nhóm rủi ro cần quản trị viên theo dõi</div>
+                </div>
+            </div>
+            <div class="grid grid-4" id="riskSummary"></div>
+
+            <div class="grid grid-2" style="margin-top:22px">
+                <section class="card">
+                    <div class="card-title"><i class="ti ti-alert-triangle"></i>Cảnh báo mới nhất</div>
+                    <div class="notice-list" id="dashboardAlerts"></div>
+                </section>
+                <section class="card">
+                    <div class="card-title"><i class="ti ti-chart-bar"></i>Thống kê 7 ngày qua</div>
+                    <div class="grid" id="weeklyBars"></div>
+                </section>
+            </div>
+
+            <div class="grid grid-2" style="margin-top:22px">
+                <section class="card">
+                    <div class="card-title"><i class="ti ti-apps"></i>Các tính năng</div>
+                    <div class="grid grid-3" id="featureList"></div>
+                </section>
+                <section class="card">
+                    <div class="card-title"><i class="ti ti-bell"></i>Thông báo gần đây</div>
+                    <div class="mini-stats" id="notificationSummary" style="margin-bottom:14px"></div>
+                    <div class="notice-list" id="noticeList"></div>
+                </section>
+            </div>
+        </section>
+
+        <section class="page" id="page-users" data-view-panel="users">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Người dùng</div>
+                    <div class="section-subtitle" id="accountMeta">Quản lý trạng thái và hồ sơ người dùng</div>
+                </div>
+            </div>
+            <section class="card">
+                <div class="toolbar">
+                    <div class="search-box">
+                        <i class="ti ti-search"></i>
+                        <input id="searchInput" type="search" placeholder="Tìm họ tên hoặc email">
+                    </div>
+                    <select class="filter-select" id="statusFilter" aria-label="Trạng thái tài khoản">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="active">Đang hoạt động</option>
+                        <option value="locked">Đã khóa</option>
+                    </select>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Người dùng</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày tạo</th>
+                                <th>Lần đăng nhập cuối</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accountRows">
+                            <tr><td colspan="5"><div class="loading-skeleton"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </section>
+
+        <section class="page" id="page-alerts" data-view-panel="alerts">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Cảnh báo sức khỏe</div>
+                    <div class="section-subtitle">Theo dõi các dấu hiệu bất thường và nhắc nhở người dùng</div>
+                </div>
+            </div>
+            <div class="toolbar">
+                <select class="filter-select" id="alertFilter">
+                    <option value="all">Tất cả</option>
+                    <option value="high">Nguy cơ cao</option>
+                    <option value="watch">Cần theo dõi</option>
+                    <option value="done">Đã xử lý</option>
+                    <option value="open">Chưa xử lý</option>
+                </select>
+                <button class="btn btn-ghost" type="button" data-open-alerts><i class="ti ti-refresh"></i>Tải lại</button>
+            </div>
+            <section class="card">
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Người dùng</th>
+                                <th>Loại cảnh báo</th>
+                                <th>Mức độ</th>
+                                <th>Thời gian phát hiện</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alertRows"></tbody>
+                    </table>
+                </div>
+            </section>
+        </section>
+
+        <section class="page" id="page-notifications" data-view-panel="notifications">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Thông báo</div>
+                    <div class="section-subtitle">Gửi thông báo cho người dùng bằng tên, không cần nhập ID thủ công</div>
+                </div>
+                <button class="btn" type="button" id="openNoticeModalBtn"><i class="ti ti-send"></i>Gửi thông báo</button>
+            </div>
+            <section class="card">
+                <div class="toolbar">
+                    <div class="search-box">
+                        <i class="ti ti-search"></i>
+                        <input id="noticeSearch" type="search" placeholder="Tìm theo nội dung hoặc người nhận">
+                    </div>
+                    <select class="filter-select" id="noticeReadFilter">
+                        <option value="all">Tất cả</option>
+                        <option value="unread">Chưa đọc</option>
+                        <option value="read">Đã đọc</option>
+                    </select>
+                </div>
+                <div class="notice-list" id="noticeListPage"></div>
+            </section>
+        </section>
+
+        <section class="page" id="page-foods" data-view-panel="foods">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Thực phẩm</div>
+                    <div class="section-subtitle">Quản lý kho thực phẩm và chỉ số dinh dưỡng</div>
+                </div>
+            </div>
+            <section class="card">
+                <div class="resource-editor" id="foodEditor">
+                    <div class="card-title" id="foodEditorTitle"><i class="ti ti-apple"></i>Thêm thực phẩm</div>
+                    <div class="form-grid">
+                        <div class="form-group"><label class="form-label">Tên món</label><input class="field" id="foodName" type="text" placeholder="Ví dụ: Cơm trắng"></div>
+                        <div class="form-group"><label class="form-label">Đơn vị</label><input class="field" id="foodUnit" type="text" value="Gram"></div>
+                        <div class="form-group"><label class="form-label">Calories</label><input class="field" id="foodCalories" type="number" min="0" step="0.1"></div>
+                        <div class="form-group"><label class="form-label">Protein</label><input class="field" id="foodProtein" type="number" min="0" step="0.1"></div>
+                        <div class="form-group"><label class="form-label">Carb</label><input class="field" id="foodCarb" type="number" min="0" step="0.1"></div>
+                        <div class="form-group"><label class="form-label">Fat</label><input class="field" id="foodFat" type="number" min="0" step="0.1"></div>
+                        <div class="form-group"><label class="form-label">Khối lượng gram</label><input class="field" id="foodWeight" type="number" min="0" step="0.1" value="100"></div>
+                        <div class="form-group"><label class="form-label">Loại thực phẩm</label><input class="field" id="foodType" type="text"></div>
+                        <div class="form-group"><label class="form-label">Từ khóa</label><input class="field" id="foodKeywords" type="text"></div>
+                        <div class="form-group"><label class="form-label">Đánh giá</label><select class="field" id="foodHealthy"><option value="1">Lành mạnh</option><option value="0">Hạn chế</option></select></div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn btn-success" id="saveFoodBtn" type="button"><i class="ti ti-device-floppy"></i>Lưu thực phẩm</button>
+                        <button class="btn btn-ghost" id="resetFoodBtn" type="button">Nhập mới</button>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr><th>Món ăn</th><th>Calories</th><th>Protein</th><th>Carb</th><th>Fat</th><th>Healthy</th><th>Thao tác</th></tr></thead>
+                        <tbody id="foodRows"></tbody>
+                    </table>
+                </div>
+            </section>
+        </section>
+
+        <section class="page" id="page-medicines" data-view-panel="medicines">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Thuốc</div>
+                    <div class="section-subtitle">Quản lý danh mục thuốc thông dụng</div>
+                </div>
+            </div>
+            <section class="card">
+                <div class="resource-editor" id="medicineEditor">
+                    <div class="card-title" id="medicineEditorTitle"><i class="ti ti-pill"></i>Thêm thuốc</div>
+                    <div class="form-grid">
+                        <div class="form-group"><label class="form-label">Tên thuốc</label><input class="field" id="medicineName" type="text"></div>
+                        <div class="form-group"><label class="form-label">Liều lượng</label><input class="field" id="medicineDose" type="text"></div>
+                        <div class="form-group"><label class="form-label">Đơn vị</label><input class="field" id="medicineUnit" type="text"></div>
+                        <div class="form-group"><label class="form-label">Số lần/ngày</label><input class="field" id="medicineTimes" type="number" min="0"></div>
+                        <div class="form-group"><label class="form-label">Hoạt chất</label><input class="field" id="medicineActive" type="text"></div>
+                        <div class="form-group"><label class="form-label">Nhóm thuốc</label><input class="field" id="medicineGroup" type="text"></div>
+                        <div class="form-group"><label class="form-label">Trạng thái</label><input class="field" id="medicineStatus" type="text" value="chua_den"></div>
+                        <div class="form-group"><label class="form-label">Mô tả</label><input class="field" id="medicineDesc" type="text"></div>
+                    </div>
+                    <textarea class="field" id="medicineSideEffect" placeholder="Tác dụng phụ"></textarea>
+                    <textarea class="field" id="medicineWarning" placeholder="Cảnh báo"></textarea>
+                    <textarea class="field" id="medicineNote" placeholder="Ghi chú"></textarea>
+                    <div class="actions">
+                        <button class="btn btn-success" id="saveMedicineBtn" type="button"><i class="ti ti-device-floppy"></i>Lưu thuốc</button>
+                        <button class="btn btn-ghost" id="resetMedicineBtn" type="button">Nhập mới</button>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead><tr><th>Thuốc</th><th>Hoạt chất</th><th>Liều dùng</th><th>Nhóm thuốc</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+                        <tbody id="medicineRows"></tbody>
+                    </table>
+                </div>
+            </section>
+        </section>
+
+        <section class="page" id="page-activities" data-view-panel="activities">
+            <div class="section-header"><div><div class="section-title">Hoạt động</div><div class="section-subtitle">Tổng hợp hoạt động vận động từ dữ liệu người dùng</div></div></div>
+            <section class="card"><div id="activitySummary" class="grid grid-3"></div></section>
+        </section>
+
+        <section class="page" id="page-reports" data-view-panel="reports">
+            <div class="section-header"><div><div class="section-title">Báo cáo</div><div class="section-subtitle">Báo cáo tổng quan từ dữ liệu hiện có</div></div></div>
+            <section class="card"><div id="reportSummary" class="grid grid-3"></div></section>
+        </section>
+
+        <section class="page" id="page-settings" data-view-panel="settings">
+            <div class="section-header"><div><div class="section-title">Cài đặt</div><div class="section-subtitle">Thông tin cấu hình giao diện quản trị</div></div></div>
+            <section class="card">
+                <div class="empty-state">
+                    <div class="empty-icon"><i class="ti ti-settings"></i></div>
+                    <div class="empty-title">Chưa có cấu hình cần chỉnh</div>
+                    <div class="empty-desc">Trang này chỉ hiển thị thông tin giao diện, không thay đổi backend hoặc cấu trúc dữ liệu.</div>
+                    <button class="btn btn-ghost" type="button" id="settingsRefreshBtn">Làm mới dữ liệu</button>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <div class="overlay" id="overlay"></div>
+    <aside class="drawer" id="profileDrawer" aria-label="Chi tiết người dùng">
+        <div class="drawer-head">
+            <div>
+                <div class="section-title" id="drawerTitle">Chi tiết người dùng</div>
+                <div class="section-subtitle" id="drawerSubtitle"></div>
+            </div>
+            <button class="btn btn-ghost btn-sm" type="button" id="closeDrawer"><i class="ti ti-x"></i>Đóng</button>
+        </div>
+        <div class="drawer-body">
+            <div class="profile-layout">
+                <section class="card profile-card">
+                    <div class="avatar avatar-lg" id="profileAvatar">U</div>
+                    <div class="profile-name" id="profileName">Người dùng</div>
+                    <div class="muted" id="profileEmail">email@example.com</div>
+                    <div style="margin-top:12px" id="profileStatus"></div>
+                    <div class="profile-stats" id="profileStats"></div>
+                    <div class="actions" style="justify-content:center;margin-top:16px">
+                        <button class="btn btn-danger btn-sm" type="button" id="profileToggleBtn">Khóa</button>
+                        <button class="btn btn-ghost btn-sm" type="button" id="profileNoticeBtn">Gửi thông báo</button>
+                    </div>
+                </section>
+                <section class="card">
+                    <div class="tabs" id="profileTabs">
+                        <button class="tab active" type="button" data-tab="overview">Tổng quan</button>
+                        <button class="tab" type="button" data-tab="health">Sức khỏe</button>
+                        <button class="tab" type="button" data-tab="nutrition">Dinh dưỡng</button>
+                        <button class="tab" type="button" data-tab="medicine">Thuốc</button>
+                        <button class="tab" type="button" data-tab="activity">Hoạt động</button>
+                        <button class="tab" type="button" data-tab="notice">Thông báo</button>
+                    </div>
+                    <div id="tab-overview" class="tab-panel active"></div>
+                    <div id="tab-health" class="tab-panel"></div>
+                    <div id="tab-nutrition" class="tab-panel"></div>
+                    <div id="tab-medicine" class="tab-panel"></div>
+                    <div id="tab-activity" class="tab-panel"></div>
+                    <div id="tab-notice" class="tab-panel"></div>
+                </section>
+            </div>
+        </div>
+    </aside>
+
+    <div class="modal-backdrop" id="noticeModal">
+        <div class="modal">
+            <div class="modal-head">
+                <div class="card-title" style="margin:0"><i class="ti ti-send"></i>Gửi thông báo</div>
+                <button class="btn btn-ghost btn-sm" type="button" data-close-modal="noticeModal"><i class="ti ti-x"></i>Đóng</button>
+            </div>
+            <div class="modal-body">
+                <div class="user-picker">
+                    <label class="form-label">Người nhận</label>
+                    <input class="field" id="noticeUserSearchInput" type="search" placeholder="Tìm theo họ tên hoặc email">
+                    <div class="picker-results" id="noticeUserResults"></div>
+                    <input id="noticeUserId" type="hidden">
+                    <div class="notice-card" id="selectedNoticeUser" hidden></div>
+                </div>
+                <div class="form-grid" style="margin-top:14px">
+                    <div class="form-group">
+                        <label class="form-label">Loại thông báo</label>
+                        <input class="field" id="noticeType" type="text" value="HeThong">
+                    </div>
+                    <label class="check-row" style="align-self:end"><input id="noticeAll" type="checkbox"> Gửi đến tất cả người dùng</label>
+                </div>
+                <div class="form-group" style="margin-top:14px">
+                    <label class="form-label">Nội dung</label>
+                    <textarea class="field" id="noticeContent" placeholder="Nhập nội dung thông báo..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-ghost" type="button" data-close-modal="noticeModal">Hủy</button>
+                    <button class="btn" type="button" id="sendNoticeBtn"><i class="ti ti-send"></i>Gửi thông báo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="confirmModal">
+        <div class="modal" style="width:min(460px,100%)">
+            <div class="modal-head">
+                <div class="card-title" style="margin:0"><i class="ti ti-alert-circle"></i>Xác nhận thao tác</div>
+                <button class="btn btn-ghost btn-sm" type="button" data-close-modal="confirmModal"><i class="ti ti-x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="notice-msg" id="confirmMessage">Bạn có chắc chắn muốn thực hiện thao tác này?</div>
+                <div class="form-actions">
+                    <button class="btn btn-ghost" type="button" data-close-modal="confirmModal">Hủy</button>
+                    <button class="btn btn-danger" type="button" id="confirmOkBtn">Xác nhận</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="toast" id="toast"></div>
 
     <script>
-        const state = { q: '', status: '', loadingAccount: false, selectedAccount: null, editingFoodId: null, editingMedicineId: null };
+        const state = {
+            accounts: [],
+            accountMap: new Map(),
+            alerts: [],
+            notifications: [],
+            foods: [],
+            medicines: [],
+            selectedAccount: null,
+            editingFoodId: null,
+            editingMedicineId: null,
+            q: '',
+            status: '',
+            noticeQ: '',
+            noticeRead: 'all',
+            alertFilter: 'all',
+            confirmAction: null,
+        };
+        const pageTitles = {
+            dashboard: '📊 Dashboard',
+            users: '👥 Người dùng',
+            alerts: '⚠️ Cảnh báo sức khỏe',
+            notifications: '🔔 Thông báo',
+            foods: '🥗 Thực phẩm',
+            medicines: '💊 Thuốc',
+            activities: '🏃 Hoạt động',
+            reports: '📈 Báo cáo',
+            settings: '⚙️ Cài đặt',
+        };
         const urlParams = new URLSearchParams(window.location.search);
         const tokenFromUrl = urlParams.get('admin_token') || urlParams.get('token');
         if (tokenFromUrl) {
             localStorage.setItem('admin_api_token', tokenFromUrl);
             urlParams.delete('admin_token');
             urlParams.delete('token');
-            const cleanUrl = `${window.location.pathname}${urlParams.toString() ? `?${urlParams}` : ''}${window.location.hash || ''}`;
-            history.replaceState(null, '', cleanUrl);
+            history.replaceState(null, '', `${window.location.pathname}${urlParams.toString() ? `?${urlParams}` : ''}${window.location.hash || ''}`);
         }
         const adminApiToken = localStorage.getItem('admin_api_token') || '';
         const adminUserId = localStorage.getItem('admin_user_id') || localStorage.getItem('user_id') || '1';
-        const overviewEl = document.getElementById('overview');
-        const accountRowsEl = document.getElementById('accountRows');
-        const accountMetaEl = document.getElementById('accountMeta');
-        const toastEl = document.getElementById('toast');
-        const drawerEl = document.getElementById('drawer');
-        const overlayEl = document.getElementById('overlay');
 
-        const resourceColumns = {
-            foods: ['ID', 'Ten', 'Calo', 'Protein', 'Carb', 'ChatBeo', 'DonVi', 'KhoiLuongGram', 'LoaiThucPham', 'IsHealthy'],
-            medicines: ['ID', 'TenThuoc', 'LieuLuong', 'DonVi', 'SoLanMoiNgay', 'HoatChat', 'NhomThuoc', 'TrangThai'],
-            reminders: ['ID', 'NguoiDungID', 'LoaiDoiTuong', 'DoiTuongId', 'ThoiGian', 'LapLai', 'NgayTrongTuan', 'TrangThai'],
-            scores: ['ID', 'NguoiDungID', 'Diem', 'NgayTinh', 'NhanXetAI'],
-        };
-
-        function number(value) {
-            return new Intl.NumberFormat('vi-VN').format(Number(value || 0));
-        }
+        const $ = (id) => document.getElementById(id);
+        const toastEl = $('toast');
+        const drawerEl = $('profileDrawer');
+        const overlayEl = $('overlay');
 
         function escapeHtml(value) {
             return String(value ?? '')
@@ -699,47 +1231,43 @@
                 .replaceAll('"', '&quot;')
                 .replaceAll("'", '&#039;');
         }
-
+        function number(value) {
+            return new Intl.NumberFormat('vi-VN').format(Number(value || 0));
+        }
         function dateTime(value) {
             if (!value) return 'Chưa có';
             const parsed = new Date(String(value).replace(' ', 'T'));
             if (Number.isNaN(parsed.getTime())) return escapeHtml(value);
             return parsed.toLocaleString('vi-VN');
         }
-
         function initials(name, email) {
-            const text = (name && name !== 'Chưa cập nhật' ? name : email || 'U').trim();
-            return escapeHtml(text.charAt(0).toUpperCase());
+            const raw = (name && name !== 'Chưa cập nhật' ? name : email || 'ND').trim();
+            const parts = raw.split(/\s+/).filter(Boolean);
+            return escapeHtml((parts.length > 1 ? parts[0][0] + parts.at(-1)[0] : raw.slice(0, 2)).toUpperCase());
         }
-
+        function stripUserId(text) {
+            return String(text || 'Người dùng').replace(/\s*\(#\d+\)\s*$/, '');
+        }
+        function userAvatar(user) {
+            if (user?.avatar) return `<div class="avatar"><img src="${escapeHtml(user.avatar)}" alt=""></div>`;
+            return `<div class="avatar">${initials(user?.name, user?.email)}</div>`;
+        }
+        function profileAvatarHtml(user) {
+            if (user?.avatar) return `<img src="${escapeHtml(user.avatar)}" alt="">`;
+            return initials(user?.name, user?.email);
+        }
         function showToast(message) {
             toastEl.textContent = message;
             toastEl.classList.add('show');
             clearTimeout(showToast.timer);
             showToast.timer = setTimeout(() => toastEl.classList.remove('show'), 3000);
         }
-
-        function showView(view) {
-            const safeView = ['overview', 'accounts', 'sendNotice', 'alerts', 'resources'].includes(view)
-                ? view
-                : 'overview';
-
-            document.querySelectorAll('[data-view-panel]').forEach(panel => {
-                panel.hidden = panel.dataset.viewPanel !== safeView;
-            });
-
-            document.querySelectorAll('[data-view-link]').forEach(link => {
-                link.classList.toggle('active', link.dataset.viewLink === safeView);
-            });
-
-            const hash = `#${safeView}`;
-            if (window.location.hash !== hash) {
-                history.pushState(null, '', hash);
-            }
-
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        function emptyState(icon, title, desc, button = '') {
+            return `<div class="empty-state"><div class="empty-icon">${icon}</div><div class="empty-title">${escapeHtml(title)}</div><div class="empty-desc">${escapeHtml(desc)}</div>${button}</div>`;
         }
-
+        function skeletonRows(cols = 5) {
+            return `<tr><td colspan="${cols}"><div class="loading-skeleton"><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div></td></tr>`;
+        }
         async function getJson(url, options = {}) {
             const response = await fetch(url, {
                 headers: {
@@ -758,598 +1286,550 @@
             return data;
         }
 
+        function showView(view) {
+            const safeView = Object.keys(pageTitles).includes(view) ? view : 'dashboard';
+            document.querySelectorAll('[data-view-panel]').forEach(panel => panel.classList.toggle('active', panel.dataset.viewPanel === safeView));
+            document.querySelectorAll('[data-view-link]').forEach(link => link.classList.toggle('active', link.dataset.viewLink === safeView));
+            $('topbarTitle').textContent = pageTitles[safeView];
+            const hash = `#${safeView}`;
+            if (window.location.hash !== hash) history.pushState(null, '', hash);
+            if (safeView === 'foods') loadFoods().catch(error => showToast(error.message));
+            if (safeView === 'medicines') loadMedicines().catch(error => showToast(error.message));
+            renderDerivedPages();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function openModal(id) {
+            $(id).classList.add('open');
+        }
+        function closeModal(id) {
+            $(id).classList.remove('open');
+            if (id === 'confirmModal') state.confirmAction = null;
+        }
+        function openConfirm(message, action) {
+            $('confirmMessage').textContent = message;
+            state.confirmAction = action;
+            openModal('confirmModal');
+        }
+
+        function badgeSeverity(severity) {
+            if (severity === 'high') return '<span class="badge badge-high">Nguy cơ cao</span>';
+            if (severity === 'medium') return '<span class="badge badge-medium">Cần theo dõi</span>';
+            return '<span class="badge badge-low">Theo dõi</span>';
+        }
+        function normalizeAlert(item, index) {
+            const account = state.accountMap.get(Number(item.user_id));
+            const fallbackName = stripUserId(item.user);
+            return {
+                id: `${item.type || 'alert'}-${item.user_id || index}-${index}`,
+                raw: item,
+                userId: Number(item.user_id || 0),
+                name: account?.name || fallbackName || 'Người dùng',
+                email: account?.email || 'Chưa có email',
+                avatar: account?.avatar || '',
+                title: item.title || 'Cảnh báo sức khỏe',
+                message: item.message || '',
+                type: item.type || 'Sức khỏe',
+                severity: item.severity || 'low',
+                action: item.action || '',
+                time: item.detected_at || item.time || item.created_at || new Date().toISOString(),
+                handled: localStorage.getItem(`alert-handled:${item.user_id}:${item.type}:${item.title}`) === '1',
+            };
+        }
+        function currentAlerts() {
+            return state.alerts.map(normalizeAlert);
+        }
+        function alertMatchesFilter(alert) {
+            if (state.alertFilter === 'high') return alert.severity === 'high';
+            if (state.alertFilter === 'watch') return alert.severity !== 'high';
+            if (state.alertFilter === 'done') return alert.handled;
+            if (state.alertFilter === 'open') return !alert.handled;
+            return true;
+        }
+
         function renderOverview(items) {
-            overviewEl.innerHTML = items.map(item => `
-                <article class="card stat ${escapeHtml(item.tone || 'mint')}">
-                    <div class="stat-label">${escapeHtml(item.label)}</div>
+            const icons = ['ti-users', 'ti-lock', 'ti-bell', 'ti-alert-triangle', 'ti-heartbeat'];
+            $('overviewStats').innerHTML = (items || []).map((item, index) => {
+                const tone = item.tone || (index === 0 ? 'blue' : 'mint');
+                return `<article class="stat-card tone-${tone === 'sky' ? 'blue' : tone}">
+                    <div class="stat-icon"><i class="ti ${icons[index] || 'ti-chart-bar'}"></i></div>
                     <div class="stat-value">${number(item.value)}</div>
-                    <div class="small">${escapeHtml(item.note || '')}</div>
-                </article>
+                    <div class="stat-label">${escapeHtml(item.label)}</div>
+                    <div class="stat-note">${escapeHtml(item.note || '')}</div>
+                </article>`;
+            }).join('');
+        }
+        function renderRiskSummary() {
+            const alerts = currentAlerts();
+            const high = alerts.filter(a => a.severity === 'high').length;
+            const watch = alerts.filter(a => a.severity !== 'high').length;
+            const missedMedicine = alerts.filter(a => /thuoc|thuốc/i.test(`${a.type} ${a.title} ${a.message}`)).length;
+            const waterDrop = alerts.filter(a => /nuoc|nước/i.test(`${a.type} ${a.title} ${a.message}`)).length;
+            const cards = [
+                ['tone-rose', 'ti-alert-octagon', 'Nguy cơ cao', high, 'Cần xử lý ngay', 'high'],
+                ['tone-peach', 'ti-eye', 'Cần theo dõi', watch, 'Theo dõi trong 24h', 'watch'],
+                ['tone-lavender', 'ti-pill-off', 'Quên uống thuốc', missedMedicine, 'Có dấu hiệu bỏ lỡ', 'all'],
+                ['tone-mint', 'ti-droplet-off', 'Bỏ theo dõi nước uống', waterDrop, 'Lượng nước bất thường', 'all'],
+            ];
+            $('riskSummary').innerHTML = cards.map(([tone, icon, label, value, note, filter]) => `
+                <button class="risk-card ${tone}" type="button" data-risk-filter="${filter}">
+                    <div class="stat-icon"><i class="ti ${icon}"></i></div>
+                    <div class="stat-value">${number(value)}</div>
+                    <div class="stat-label">${label}</div>
+                    <div class="stat-note">${note}</div>
+                </button>
             `).join('');
+            $('navAlertCount').textContent = number(alerts.filter(a => !a.handled).length);
+        }
+        function renderDashboardAlerts() {
+            const alerts = currentAlerts().slice(0, 5);
+            $('dashboardAlerts').innerHTML = alerts.length ? alerts.map(alertCard).join('') : emptyState('✨', 'Không có cảnh báo mới', 'Hệ thống chưa phát hiện dấu hiệu sức khỏe bất thường.', '<button class="btn btn-ghost" type="button" data-open-alerts>Xem trang cảnh báo</button>');
+        }
+        function alertCard(alert) {
+            return `<article class="notice-card ${alert.severity === 'high' ? 'alert-high' : 'alert-medium'}">
+                ${userAvatar(alert)}
+                <div style="min-width:0;flex:1">
+                    <div class="notice-title">${escapeHtml(alert.name)} ${badgeSeverity(alert.severity)}</div>
+                    <div class="muted">${escapeHtml(alert.email)}</div>
+                    <div class="notice-msg"><strong>${escapeHtml(alert.title)}</strong> - ${escapeHtml(alert.message)}</div>
+                    <div class="actions" style="margin-top:10px">
+                        <button class="btn btn-ghost btn-sm" type="button" data-profile="${alert.userId}"><i class="ti ti-user"></i>Xem hồ sơ</button>
+                        <button class="btn btn-sm" type="button" data-notice-user="${alert.userId}" data-notice-message="${escapeHtml(alert.message)}"><i class="ti ti-send"></i>Gửi thông báo</button>
+                    </div>
+                </div>
+            </article>`;
+        }
+        function renderAlertTable() {
+            const rows = currentAlerts().filter(alertMatchesFilter);
+            $('alertRows').innerHTML = rows.length ? rows.map(alert => `<tr>
+                <td><div class="avatar-row">${userAvatar(alert)}<div><div class="primary-text">${escapeHtml(alert.name)}</div><div class="muted">${escapeHtml(alert.email)}</div></div></div></td>
+                <td><span class="tag tag-blue">${escapeHtml(alert.type)}</span><div class="muted">${escapeHtml(alert.title)}</div></td>
+                <td>${badgeSeverity(alert.severity)}</td>
+                <td>${dateTime(alert.time)}</td>
+                <td>${alert.handled ? '<span class="badge badge-done">Đã xử lý</span>' : '<span class="badge badge-high">Chưa xử lý</span>'}</td>
+                <td><div class="actions">
+                    <button class="btn btn-ghost btn-sm" type="button" data-profile="${alert.userId}">Xem hồ sơ</button>
+                    <button class="btn btn-sm" type="button" data-notice-user="${alert.userId}" data-notice-message="${escapeHtml(alert.message)}">Gửi thông báo</button>
+                    <button class="btn btn-success btn-sm" type="button" data-handle-alert="${alert.id}">Đã xử lý</button>
+                </div></td>
+            </tr>`).join('') : `<tr><td colspan="6">${emptyState('✅', 'Không có cảnh báo phù hợp', 'Bộ lọc hiện tại chưa có cảnh báo nào.', '<button class="btn btn-ghost" type="button" data-open-alerts>Tải lại cảnh báo</button>')}</td></tr>`;
         }
 
         function renderFeatures(items) {
-            document.getElementById('featureList').innerHTML = items.map(item => `
-                <div class="feature-item">
-                    <div>
-                        <strong>${escapeHtml(item.label)}</strong>
-                        <div class="small">${escapeHtml(item.note || '')}</div>
-                    </div>
-                    <div class="feature-value">${number(item.value)}</div>
+            $('featureList').innerHTML = (items || []).length ? items.map(item => `
+                <div class="notice-card" style="background:var(--bg)">
+                    <div class="notice-icon"><i class="ti ti-activity"></i></div>
+                    <div><div class="notice-title">${escapeHtml(item.label)}</div><div class="notice-msg">${number(item.value)} - ${escapeHtml(item.note || '')}</div></div>
                 </div>
-            `).join('');
+            `).join('') : emptyState('📦', 'Chưa có dữ liệu tính năng', 'Dữ liệu module sẽ hiển thị khi hệ thống có bản ghi.');
         }
-
-        function renderNotifications(data) {
-            document.getElementById('notificationSummary').innerHTML = `
-                <span>Tổng: ${number(data.total)}</span>
-                <span>Chưa đọc: ${number(data.unread)}</span>
-                <span>Đã đọc: ${number(data.read)}</span>
-                <span>Hôm nay: ${number(data.today)}</span>
-            `;
-
-            const notices = data.recent || [];
-            document.getElementById('noticeList').innerHTML = notices.length ? notices.map(item => `
-                <article class="notice-item">
-                    <div class="notice-meta">
-                        <strong>${escapeHtml(item.type)}</strong>
-                        <span>${item.is_read ? 'Đã đọc' : 'Chưa đọc'}</span>
-                    </div>
-                    <div>${escapeHtml(item.content || 'Không có nội dung')}</div>
-                    <div class="small">${escapeHtml(item.user)} · ${dateTime(item.time)}</div>
-                    <div class="actions" style="justify-content:flex-start;margin-top:8px">
-                        <button class="btn secondary small-btn" data-read-notice="${item.id}" type="button">Đã đọc</button>
-                        <button class="btn danger small-btn" data-delete-notice="${item.id}" type="button">Xóa</button>
-                    </div>
-                </article>
-            `).join('') : '<div class="empty">Chưa có thông báo nào.</div>';
-        }
-
-        function renderAlerts(items) {
-            const list = document.getElementById('alertList');
-            if (!list) return;
-            list.innerHTML = (items || []).length ? items.map(item => `
-                <article class="notice-item">
-                    <div class="notice-meta">
-                        <strong>${escapeHtml(item.title || 'Canh bao')}</strong>
-                        <span>${escapeHtml(item.severity || 'low')}</span>
-                    </div>
-                    <div>${escapeHtml(item.message || '')}</div>
-                    <div class="small">${escapeHtml(item.user || '')} · ${escapeHtml(item.type || '')}</div>
-                    <div class="small">${escapeHtml(item.action || '')}</div>
-                    <div class="actions" style="justify-content:flex-start;margin-top:8px">
-                        <button class="btn secondary small-btn" type="button" data-alert-notice="${item.user_id}" data-alert-message="${escapeHtml(item.message || '')}">Gui thong bao</button>
-                    </div>
-                </article>
-            `).join('') : '<div class="empty">Chua co canh bao bat thuong.</div>';
-        }
-
         function renderWeekly(days) {
-            const max = Math.max(1, ...days.map(day => Math.max(day.accounts, day.notifications)));
-            document.getElementById('weeklyBars').innerHTML = days.map(day => {
-                const height = Math.max(8, Math.round((Math.max(day.accounts, day.notifications) / max) * 100));
-                return `
-                    <div class="bar-cell" title="${day.accounts} tài khoản, ${day.notifications} thông báo">
-                        <div class="bar" style="height:${height}%"></div>
-                        <span>${escapeHtml(day.label)}</span>
+            const max = Math.max(1, ...days.map(day => Math.max(day.accounts || 0, day.notifications || 0)));
+            $('weeklyBars').innerHTML = `<div style="display:flex;align-items:flex-end;gap:12px;height:180px">${days.map(day => {
+                const h = Math.max(10, Math.round((Math.max(day.accounts || 0, day.notifications || 0) / max) * 100));
+                return `<div style="flex:1;display:grid;gap:8px;justify-items:center;align-items:end;height:100%">
+                    <div title="${number(day.accounts)} tài khoản, ${number(day.notifications)} thông báo" style="width:100%;height:${h}%;border-radius:10px 10px 2px 2px;background:linear-gradient(180deg,var(--blue),#0b84c6)"></div>
+                    <span class="muted">${escapeHtml(day.label)}</span>
+                </div>`;
+            }).join('')}</div>`;
+        }
+
+        function notificationMatches(item) {
+            const q = state.noticeQ.toLowerCase();
+            if (state.noticeRead === 'read' && !item.is_read) return false;
+            if (state.noticeRead === 'unread' && item.is_read) return false;
+            if (!q) return true;
+            return `${item.type} ${item.content} ${item.user}`.toLowerCase().includes(q);
+        }
+        function notificationCard(item) {
+            const name = stripUserId(item.user);
+            return `<article class="notice-card">
+                <div class="notice-icon"><i class="ti ti-bell"></i></div>
+                <div style="min-width:0;flex:1">
+                    <div class="notice-title">${escapeHtml(item.type || 'Thông báo')}</div>
+                    <div class="notice-msg">${escapeHtml(item.content || 'Không có nội dung')}</div>
+                    <div class="muted">${escapeHtml(name)} - ${dateTime(item.time)} ${item.is_read ? '• Đã đọc' : '• Chưa đọc'}</div>
+                    <div class="actions" style="margin-top:10px">
+                        <button class="btn btn-ghost btn-sm" data-read-notice="${item.id}" type="button">Đánh dấu đọc</button>
+                        <button class="btn btn-danger btn-sm" data-delete-notice="${item.id}" type="button">Xóa</button>
                     </div>
-                `;
-            }).join('');
+                </div>
+            </article>`;
+        }
+        function renderNotifications(data) {
+            state.notifications = data.recent || [];
+            $('notificationSummary').innerHTML = `<span>Tổng: ${number(data.total)}</span><span>Chưa đọc: ${number(data.unread)}</span><span>Đã đọc: ${number(data.read)}</span><span>Hôm nay: ${number(data.today)}</span>`;
+            $('navNoticeCount').textContent = number(data.unread || 0);
+            renderNoticeLists();
+        }
+        function renderNoticeLists() {
+            const filtered = state.notifications.filter(notificationMatches);
+            const html = filtered.length ? filtered.map(notificationCard).join('') : emptyState('🔔', 'Chưa có thông báo nào', 'Khi hệ thống có thông báo, danh sách sẽ xuất hiện tại đây.', '<button class="btn" type="button" id="emptyOpenNotice">Gửi thông báo đầu tiên</button>');
+            $('noticeList').innerHTML = state.notifications.length ? state.notifications.slice(0, 4).map(notificationCard).join('') : emptyState('🔔', 'Chưa có thông báo', 'Thông báo gần đây sẽ hiển thị tại đây.');
+            $('noticeListPage').innerHTML = html;
+            $('emptyOpenNotice')?.addEventListener('click', () => openNoticeModal());
         }
 
         function renderAccounts(payload) {
-            const rows = payload.data || [];
-            accountMetaEl.textContent = `${number(payload.meta?.total || 0)} tài khoản trong hệ thống`;
+            state.accounts = payload.data || [];
+            state.accountMap = new Map(state.accounts.map(account => [Number(account.id), account]));
+            $('accountMeta').textContent = `${number(payload.meta?.total || 0)} tài khoản trong hệ thống`;
+            $('navUserCount').textContent = number(payload.meta?.total || state.accounts.length);
+            renderAccountRows();
+            renderNoticeUserPicker();
+        }
+        function renderAccountRows() {
+            const rows = state.accounts;
+            $('accountRows').innerHTML = rows.length ? rows.map(account => `<tr>
+                <td><div class="avatar-row">${userAvatar(account)}<div><div class="primary-text">${escapeHtml(account.name)}</div><div class="muted">${escapeHtml(account.email)}</div></div></div></td>
+                <td><span class="badge ${account.is_active ? 'badge-active' : 'badge-locked'}">${escapeHtml(account.status)}</span></td>
+                <td>${dateTime(account.created_at)}</td>
+                <td>${dateTime(account.last_login)}</td>
+                <td><div class="actions">
+                    <button class="btn btn-ghost btn-sm" data-profile="${account.id}" type="button">Xem chi tiết</button>
+                    <button class="btn ${account.is_active ? 'btn-danger' : 'btn-success'} btn-sm" data-toggle="${account.id}" data-locked="${account.is_active ? '1' : '0'}" type="button">${account.is_active ? 'Khóa' : 'Mở khóa'}</button>
+                </div></td>
+            </tr>`).join('') : `<tr><td colspan="5">${emptyState('👥', 'Chưa có người dùng', 'Danh sách người dùng sẽ hiển thị sau khi có tài khoản.', '<button class="btn btn-ghost" type="button" id="reloadUsersEmpty">Tải lại</button>')}</td></tr>`;
+            $('reloadUsersEmpty')?.addEventListener('click', () => loadAccounts().catch(error => showToast(error.message)));
+        }
 
-            if (!rows.length) {
-                accountRowsEl.innerHTML = '<tr><td colspan="5" class="empty">Không tìm thấy tài khoản phù hợp.</td></tr>';
-                return;
-            }
+        function renderFoods() {
+            $('foodRows').innerHTML = state.foods.length ? state.foods.map((food, index) => `<tr>
+                <td><div class="avatar-row"><div class="avatar">🥗</div><div><div class="primary-text">${escapeHtml(food.Ten)}</div><div class="muted">${escapeHtml(food.KhoiLuongGram || 100)}g • ${escapeHtml(food.LoaiThucPham || 'Chưa phân loại')}</div></div></div></td>
+                <td><strong>${number(food.Calo)}</strong> kcal</td>
+                <td><span class="macro-pill macro-p">${escapeHtml(food.Protein || 0)}g</span></td>
+                <td><span class="macro-pill macro-c">${escapeHtml(food.Carb || 0)}g</span></td>
+                <td><span class="macro-pill macro-f">${escapeHtml(food.ChatBeo || 0)}g</span></td>
+                <td>${Number(food.IsHealthy) === 1 ? '<span class="badge badge-active">Lành mạnh</span>' : '<span class="badge badge-locked">Hạn chế</span>'}</td>
+                <td><div class="actions"><button class="btn btn-ghost btn-sm" data-edit-food="${index}" type="button">Sửa</button><button class="btn btn-danger btn-sm" data-delete-food="${food.ID}" type="button">Xóa</button></div></td>
+            </tr>`).join('') : `<tr><td colspan="7">${emptyState('🥗', 'Chưa có thực phẩm nào', 'Thêm thực phẩm đầu tiên để người dùng ghi nhận bữa ăn.', '<button class="btn" type="button" id="focusFoodForm">Thêm thực phẩm đầu tiên</button>')}</td></tr>`;
+            $('focusFoodForm')?.addEventListener('click', () => $('foodName').focus());
+        }
+        function renderMedicines() {
+            $('medicineRows').innerHTML = state.medicines.length ? state.medicines.map((medicine, index) => `<tr>
+                <td><div class="avatar-row"><div class="avatar">💊</div><div><div class="primary-text">${escapeHtml(medicine.TenThuoc)}</div><div class="muted">${escapeHtml(medicine.MoTa || medicine.GhiChu || '')}</div></div></div></td>
+                <td>${escapeHtml(medicine.HoatChat || 'Chưa cập nhật')}</td>
+                <td>${escapeHtml(medicine.LieuLuong || '')} ${escapeHtml(medicine.DonVi || '')}</td>
+                <td><span class="tag tag-lavender">${escapeHtml(medicine.NhomThuoc || 'Khác')}</span></td>
+                <td><span class="badge badge-info">${escapeHtml(medicine.TrangThai || 'Hoạt động')}</span></td>
+                <td><div class="actions"><button class="btn btn-ghost btn-sm" data-edit-medicine="${index}" type="button">Sửa</button><button class="btn btn-danger btn-sm" data-delete-medicine="${medicine.ID}" type="button">Xóa</button></div></td>
+            </tr>`).join('') : `<tr><td colspan="6">${emptyState('💊', 'Chưa có thuốc nào', 'Thêm thuốc đầu tiên để người dùng tìm kiếm và lập lịch uống thuốc.', '<button class="btn" type="button" id="focusMedicineForm">Thêm thuốc đầu tiên</button>')}</td></tr>`;
+            $('focusMedicineForm')?.addEventListener('click', () => $('medicineName').focus());
+        }
 
-            accountRowsEl.innerHTML = rows.map(account => `
-                <tr>
-                    <td>
-                        <div class="user-cell">
-                            <div class="avatar">${account.avatar ? `<img src="${escapeHtml(account.avatar)}" alt="">` : initials(account.name, account.email)}</div>
-                            <div>
-                                <strong>${escapeHtml(account.name)}</strong>
-                                <div class="small">${escapeHtml(account.email)}</div>
-                                <div class="small">ID: ${account.id}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="badge ${account.is_active ? 'active' : 'locked'}">${escapeHtml(account.status)}</span></td>
-                    <td>
-                        <div class="mini-stats">
-                            <span>TB ${number(account.stats.notifications)}</span>
-                            <span>Chưa đọc ${number(account.stats.unread_notifications)}</span>
-                            <span>Bữa ${number(account.stats.meals)}</span>
-                            <span>Nước ${number(account.stats.water_logs)}</span>
-                            <span>Thuốc ${number(account.stats.medicines)}</span>
-                            <span>Tập ${number(account.stats.activities)}</span>
-                        </div>
-                    </td>
-                    <td>
-                        <div>${dateTime(account.last_login)}</div>
-                        <div class="small">Tạo: ${dateTime(account.created_at)}</div>
-                    </td>
-                    <td>
-                        <div class="actions" style="justify-content:flex-start">
-                            <button class="btn secondary small-btn" data-detail="${account.id}" type="button">Chi tiết</button>
-                            <button class="btn ${account.is_active ? 'danger' : 'good'} small-btn" data-toggle="${account.id}" data-locked="${account.is_active ? '1' : '0'}" type="button">
-                                ${account.is_active ? 'Khóa' : 'Mở'}
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+        function renderDerivedPages() {
+            const totalActivities = state.accounts.reduce((sum, account) => sum + Number(account.stats?.activities || 0), 0);
+            $('activitySummary').innerHTML = [
+                ['🏃', 'Tổng hoạt động', totalActivities, 'Dựa trên thống kê người dùng'],
+                ['🔥', 'Tài khoản có vận động', state.accounts.filter(a => Number(a.stats?.activities || 0) > 0).length, 'Đã ghi nhận hoạt động'],
+                ['📋', 'Nguồn dữ liệu', 'activity/stats', 'Giữ nguyên API hiện có'],
+            ].map(([icon, title, value, note]) => `<div class="stat-card tone-blue"><div class="stat-icon">${icon}</div><div class="stat-value">${number(value)}</div><div class="stat-label">${title}</div><div class="stat-note">${note}</div></div>`).join('');
+            const totalMeals = state.accounts.reduce((sum, account) => sum + Number(account.stats?.meals || 0), 0);
+            const totalWater = state.accounts.reduce((sum, account) => sum + Number(account.stats?.water_logs || 0), 0);
+            const totalMeds = state.accounts.reduce((sum, account) => sum + Number(account.stats?.medicines || 0), 0);
+            $('reportSummary').innerHTML = [
+                ['🥗', 'Bữa ăn', totalMeals, 'Tổng bản ghi bữa ăn'],
+                ['💧', 'Uống nước', totalWater, 'Tổng lần ghi nhận nước'],
+                ['💊', 'Thuốc', totalMeds, 'Tổng lịch sử thuốc'],
+            ].map(([icon, title, value, note]) => `<div class="stat-card tone-mint"><div class="stat-icon">${icon}</div><div class="stat-value">${number(value)}</div><div class="stat-label">${title}</div><div class="stat-note">${note}</div></div>`).join('');
         }
 
         function openDrawer() {
             drawerEl.classList.add('open');
             overlayEl.classList.add('open');
         }
-
         function closeDrawer() {
             drawerEl.classList.remove('open');
             overlayEl.classList.remove('open');
             state.selectedAccount = null;
         }
-
-        function fillAccountForm(account) {
-            document.getElementById('drawerTitle').textContent = account.name;
-            document.getElementById('drawerSubtitle').textContent = `${account.email} · ID ${account.id}`;
-            document.getElementById('editEmail').value = account.email || '';
-            document.getElementById('editName').value = account.name === 'Chưa cập nhật' ? '' : account.name || '';
-            document.getElementById('editGender').value = account.gender || '';
-            document.getElementById('editBirthday').value = account.birthday || '';
-            document.getElementById('editHeight').value = account.height || '';
-            document.getElementById('editWeight').value = account.weight || '';
-            document.getElementById('editAvatar').value = account.avatar || '';
-            document.getElementById('editActive').checked = Boolean(account.is_active);
-            document.getElementById('noticeUserId').value = account.id;
+        function activateTab(tab) {
+            document.querySelectorAll('.tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.toggle('active', panel.id === `tab-${tab}`));
         }
-
-        function renderDrawerStats(account) {
-            document.getElementById('drawerStats').innerHTML = `
-                <span>Thông báo ${number(account.stats.notifications)}</span>
-                <span>Chưa đọc ${number(account.stats.unread_notifications)}</span>
-                <span>Bữa ăn ${number(account.stats.meals)}</span>
-                <span>Nước ${number(account.stats.water_logs)}</span>
-                <span>Thuốc ${number(account.stats.medicines)}</span>
-                <span>Tập ${number(account.stats.activities)}</span>
-            `;
+        function infoRows(items) {
+            return `<div class="info-grid">${items.map(([label, value]) => `<div class="info-row"><div class="info-label">${escapeHtml(label)}</div><div class="info-value">${escapeHtml(value || 'Chưa có dữ liệu')}</div></div>`).join('')}</div>`;
         }
-
-        function fillModeForm(data) {
-            const preferences = data.health?.preferences || {};
-            const goals = data.health?.goals || [];
-            const waterGoal = goals.find(goal => goal.LoaiMucTieu === 'Nuoc' || goal.TenMucTieu === 'Uống nước');
-            const goalNames = preferences.MucTieu || goals
-                .filter(goal => goal.LoaiMucTieu !== 'Nuoc')
-                .map(goal => goal.TenMucTieu)
-                .filter(Boolean)
-                .join(', ');
-
-            document.getElementById('modeGoals').value = goalNames || '';
-            document.getElementById('modeActivity').value = preferences.MucDoVanDong || '';
-            document.getElementById('modeDiet').value = preferences.CheDoAn || '';
-            document.getElementById('modeWaterGoal').value = waterGoal?.GiaTriMucTieu || '';
+        function renderDetailList(items, icon, title, desc) {
+            if (!items || !items.length) return emptyState(icon, title, desc);
+            return `<div class="notice-list">${items.map(item => `<div class="notice-card"><div class="notice-icon">${icon}</div><div style="min-width:0">${Object.entries(item).slice(0, 5).map(([key, value]) => `<div><strong>${escapeHtml(key)}:</strong> <span class="muted">${escapeHtml(value)}</span></div>`).join('')}</div></div>`).join('')}</div>`;
         }
-
-        function detailLine(title, body) {
-            return `<div class="detail-item"><strong>${escapeHtml(title)}</strong><div class="small">${escapeHtml(body || 'Chưa có dữ liệu')}</div></div>`;
-        }
-
-        function renderAccountDetail(data) {
-            const account = data.account;
-            state.selectedAccount = account;
-            fillAccountForm(account);
-            fillModeForm(data);
-            renderDrawerStats(account);
-
-            const score = data.health?.latest_score;
-            const index = data.health?.latest_index;
-            const healthProfile = data.health?.profile;
-            document.getElementById('healthDetails').innerHTML = [
-                detailLine('Điểm sức khỏe', score ? `${score.Diem || 0} điểm · ${score.NgayTinh || ''} · ${score.NhanXetAI || ''}` : ''),
-                detailLine('Chỉ số mới nhất', index ? `BMI ${index.BMI || 'N/A'}, cân nặng ${index.CanNang || 'N/A'}, HA ${index.HuyetAp || 'N/A'}, nhịp tim ${index.NhipTim || 'N/A'}` : ''),
-                detailLine('Hồ sơ sức khỏe', healthProfile ? `Máu ${healthProfile.NhomMau || 'N/A'}, bệnh nền ${healthProfile.BenhNen || 'N/A'}, thể trạng ${healthProfile.TheTrang || 'N/A'}` : ''),
-            ].join('');
-
-            const recent = data.recent || {};
-            document.getElementById('recentDetails').innerHTML = [
-                detailLine('Bữa ăn', (recent.meals || []).map(item => `${item.Ngay || ''} ${item.LoaiBuaAn || ''} (${item.SoMon || 0} món, ${number(item.TongCalo)} kcal)`).join(' | ')),
-                detailLine('Nước', (recent.water || []).map(item => `${item.Ngay || ''}: ${number(item.LuongNuoc)} ml`).join(' | ')),
-                detailLine('Thuốc', (recent.medicines || []).map(item => `${item.TenThuoc || 'Thuốc'} ${item.LieuLuong || ''} - ${item.TrangThai || ''}`).join(' | ')),
-                detailLine('Vận động', (recent.activities || []).map(item => `${item.TenHoatDong || 'Hoạt động'} ${item.TrangThai || ''}`).join(' | ')),
-            ].join('');
-        }
-
-        function renderResources(payload) {
-            const columns = resourceColumns[payload.type] || [];
-            document.getElementById('resourceHead').innerHTML = `<tr>${columns.map(col => `<th>${escapeHtml(col)}</th>`).join('')}<th>Thao tác</th></tr>`;
-            const rows = payload.data || [];
-            document.getElementById('resourceRows').innerHTML = rows.length ? rows.map(row => `
-                <tr>
-                    ${columns.map(col => `<td>${escapeHtml(row[col] ?? '')}</td>`).join('')}
-                    <td>${resourceActions(payload.type, row)}</td>
-                </tr>
-            `).join('') : `<tr><td colspan="${(columns.length || 1) + 1}" class="empty">Chưa có dữ liệu.</td></tr>`;
-            syncResourceEditors(payload.type);
-        }
-
-        function resourceActions(type, row) {
-            if (type === 'foods') {
-                return `
-                    <div class="actions" style="justify-content:flex-start">
-                        <button class="btn secondary small-btn" data-edit-food='${escapeHtml(JSON.stringify(row))}' type="button">Sửa</button>
-                        <button class="btn danger small-btn" data-delete-food="${row.ID}" type="button">Xóa</button>
-                    </div>
-                `;
+        async function openProfile(userId) {
+            if (!userId) return;
+            try {
+                const data = await getJson(`/api/admin/accounts/${userId}`);
+                const account = data.account;
+                state.selectedAccount = account;
+                $('drawerTitle').textContent = `Chi tiết người dùng`;
+                $('drawerSubtitle').textContent = `${account.name} • ${account.email}`;
+                $('profileAvatar').innerHTML = profileAvatarHtml(account);
+                $('profileName').textContent = account.name || 'Người dùng';
+                $('profileEmail').textContent = account.email || 'Chưa có email';
+                $('profileStatus').innerHTML = `<span class="badge ${account.is_active ? 'badge-active' : 'badge-locked'}">${escapeHtml(account.status)}</span>`;
+                $('profileStats').innerHTML = `<div class="profile-stat"><strong>${number(account.stats.meals)}</strong><span class="muted">Bữa ăn</span></div><div class="profile-stat"><strong>${number(account.stats.water_logs)}</strong><span class="muted">Uống nước</span></div><div class="profile-stat"><strong>${number(account.stats.medicines)}</strong><span class="muted">Thuốc</span></div><div class="profile-stat"><strong>${number(account.stats.activities)}</strong><span class="muted">Hoạt động</span></div>`;
+                $('profileToggleBtn').textContent = account.is_active ? 'Khóa' : 'Mở khóa';
+                $('profileToggleBtn').className = `btn ${account.is_active ? 'btn-danger' : 'btn-success'} btn-sm`;
+                $('profileToggleBtn').dataset.toggle = account.id;
+                $('profileToggleBtn').dataset.locked = account.is_active ? '1' : '0';
+                $('profileNoticeBtn').dataset.noticeUser = account.id;
+                $('profileNoticeBtn').dataset.noticeMessage = '';
+                const latestIndex = data.health?.latest_index || {};
+                const bmi = latestIndex.BMI || (account.height && account.weight ? (Number(account.weight) / ((Number(account.height) / 100) ** 2)).toFixed(1) : '');
+                $('tab-overview').innerHTML = infoRows([
+                    ['Họ tên', account.name],
+                    ['Email', account.email],
+                    ['Ngày sinh', account.birthday],
+                    ['Giới tính', account.gender],
+                    ['Chiều cao', account.height ? `${account.height} cm` : ''],
+                    ['Cân nặng', account.weight ? `${account.weight} kg` : ''],
+                    ['BMI', bmi],
+                ]);
+                const profile = data.health?.profile || {};
+                const score = data.health?.latest_score || {};
+                $('tab-health').innerHTML = infoRows([
+                    ['Hồ sơ sức khỏe', `Nhóm máu ${profile.NhomMau || 'N/A'}, bệnh nền ${profile.BenhNen || 'N/A'}, thể trạng ${profile.TheTrang || 'N/A'}`],
+                    ['Chỉ số gần nhất', `BMI ${latestIndex.BMI || 'N/A'}, cân nặng ${latestIndex.CanNang || 'N/A'}, huyết áp ${latestIndex.HuyetAp || 'N/A'}, nhịp tim ${latestIndex.NhipTim || 'N/A'}`],
+                    ['Điểm sức khỏe', score.Diem ? `${score.Diem} điểm - ${score.NhanXetAI || ''}` : 'Chưa có dữ liệu'],
+                ]);
+                $('tab-nutrition').innerHTML = renderDetailList(data.recent?.meals, '🥗', 'Chưa có bữa ăn nào', 'Bữa ăn gần đây sẽ hiển thị tại đây.');
+                $('tab-medicine').innerHTML = renderDetailList(data.recent?.medicines, '💊', 'Chưa có thuốc nào', 'Lịch sử thuốc sẽ hiển thị tại đây.');
+                $('tab-activity').innerHTML = renderDetailList(data.recent?.activities, '🏃', 'Chưa có hoạt động nào', 'Lịch sử vận động sẽ hiển thị tại đây.');
+                $('tab-notice').innerHTML = renderDetailList(data.recent?.notifications, '🔔', 'Chưa có thông báo nào', 'Các thông báo đã nhận sẽ hiển thị tại đây.');
+                activateTab('overview');
+                openDrawer();
+            } catch (error) {
+                showToast(error.message);
             }
+        }
 
-            if (type === 'medicines') {
-                return `
-                    <div class="actions" style="justify-content:flex-start">
-                        <button class="btn secondary small-btn" data-edit-medicine='${escapeHtml(JSON.stringify(row))}' type="button">Sửa</button>
-                        <button class="btn danger small-btn" data-delete-medicine="${row.ID}" type="button">Xóa</button>
-                    </div>
-                `;
+        function renderNoticeUserPicker(query = '') {
+            const q = query.trim().toLowerCase();
+            const users = state.accounts.filter(account => !q || `${account.name} ${account.email}`.toLowerCase().includes(q)).slice(0, 8);
+            $('noticeUserResults').innerHTML = users.length ? users.map(account => `<button class="picker-item" type="button" data-pick-user="${account.id}">${userAvatar(account)}<span style="min-width:0"><span class="primary-text">${escapeHtml(account.name)}</span><br><span class="muted">${escapeHtml(account.email)}</span></span></button>`).join('') : emptyState('👥', 'Không tìm thấy người dùng', 'Thử nhập tên hoặc email khác.');
+        }
+        function selectNoticeUser(userId) {
+            const account = state.accountMap.get(Number(userId));
+            if (!account) return;
+            $('noticeUserId').value = account.id;
+            $('selectedNoticeUser').hidden = false;
+            $('selectedNoticeUser').innerHTML = `${userAvatar(account)}<div style="min-width:0"><div class="notice-title">${escapeHtml(account.name)}</div><div class="notice-msg">${escapeHtml(account.email)}</div></div>`;
+            $('noticeUserSearchInput').value = account.name || account.email;
+            renderNoticeUserPicker(account.name || account.email);
+        }
+        function openNoticeModal(userId = null, message = '') {
+            $('noticeContent').value = message || '';
+            $('noticeType').value = message ? 'HealthRisk' : 'HeThong';
+            $('noticeAll').checked = false;
+            if (userId) {
+                selectNoticeUser(userId);
+            } else {
+                $('noticeUserId').value = '';
+                $('selectedNoticeUser').hidden = true;
+                $('noticeUserSearchInput').value = '';
+                renderNoticeUserPicker();
             }
-
-            return '<span class="small">Chỉ xem</span>';
-        }
-
-        function syncResourceEditors(type) {
-            document.getElementById('foodEditor').hidden = type !== 'foods';
-            document.getElementById('medicineEditor').hidden = type !== 'medicines';
-        }
-
-        function resetFoodForm() {
-            state.editingFoodId = null;
-            document.getElementById('foodEditorTitle').textContent = 'Thêm thực phẩm';
-            document.getElementById('foodName').value = '';
-            document.getElementById('foodUnit').value = 'Gram';
-            document.getElementById('foodCalories').value = '';
-            document.getElementById('foodProtein').value = '';
-            document.getElementById('foodCarb').value = '';
-            document.getElementById('foodFat').value = '';
-            document.getElementById('foodWeight').value = '100';
-            document.getElementById('foodType').value = '';
-            document.getElementById('foodKeywords').value = '';
-            document.getElementById('foodHealthy').value = '1';
-        }
-
-        function fillFoodForm(food) {
-            state.editingFoodId = food.ID;
-            document.getElementById('foodEditorTitle').textContent = `Sửa thực phẩm #${food.ID}`;
-            document.getElementById('foodName').value = food.Ten || '';
-            document.getElementById('foodUnit').value = food.DonVi || 'Gram';
-            document.getElementById('foodCalories').value = food.Calo ?? '';
-            document.getElementById('foodProtein').value = food.Protein ?? '';
-            document.getElementById('foodCarb').value = food.Carb ?? '';
-            document.getElementById('foodFat').value = food.ChatBeo ?? '';
-            document.getElementById('foodWeight').value = food.KhoiLuongGram ?? 100;
-            document.getElementById('foodType').value = food.LoaiThucPham || '';
-            document.getElementById('foodKeywords').value = food.Keywords || '';
-            document.getElementById('foodHealthy').value = String(food.IsHealthy ?? 1);
-        }
-
-        function resetMedicineForm() {
-            state.editingMedicineId = null;
-            document.getElementById('medicineEditorTitle').textContent = 'Thêm thuốc';
-            document.getElementById('medicineName').value = '';
-            document.getElementById('medicineDose').value = '';
-            document.getElementById('medicineUnit').value = '';
-            document.getElementById('medicineTimes').value = '';
-            document.getElementById('medicineActive').value = '';
-            document.getElementById('medicineGroup').value = '';
-            document.getElementById('medicineStatus').value = 'chua_den';
-            document.getElementById('medicineDesc').value = '';
-            document.getElementById('medicineSideEffect').value = '';
-            document.getElementById('medicineWarning').value = '';
-            document.getElementById('medicineNote').value = '';
-        }
-
-        function fillMedicineForm(medicine) {
-            state.editingMedicineId = medicine.ID;
-            document.getElementById('medicineEditorTitle').textContent = `Sửa thuốc #${medicine.ID}`;
-            document.getElementById('medicineName').value = medicine.TenThuoc || '';
-            document.getElementById('medicineDose').value = medicine.LieuLuong || '';
-            document.getElementById('medicineUnit').value = medicine.DonVi || '';
-            document.getElementById('medicineTimes').value = medicine.SoLanMoiNgay ?? '';
-            document.getElementById('medicineActive').value = medicine.HoatChat || '';
-            document.getElementById('medicineGroup').value = medicine.NhomThuoc || '';
-            document.getElementById('medicineStatus').value = medicine.TrangThai || 'chua_den';
-            document.getElementById('medicineDesc').value = medicine.MoTa || '';
-            document.getElementById('medicineSideEffect').value = medicine.TacDungPhu || '';
-            document.getElementById('medicineWarning').value = medicine.CanhBao || '';
-            document.getElementById('medicineNote').value = medicine.GhiChu || '';
+            openModal('noticeModal');
         }
 
         async function loadStats() {
             const data = await getJson('/api/admin/stats');
-            document.getElementById('generatedAt').textContent = `Cập nhật lúc ${dateTime(data.generated_at)}`;
+            $('generatedAt').textContent = `Cập nhật lúc ${dateTime(data.generated_at)} • Múi giờ Asia/Ho_Chi_Minh`;
+            state.alerts = data.alerts || [];
             renderOverview(data.overview || []);
             renderFeatures(data.features || []);
             renderNotifications(data.notifications || {});
-            renderAlerts(data.alerts || []);
             renderWeekly(data.weekly || []);
+            renderRiskSummary();
+            renderDashboardAlerts();
+            renderAlertTable();
         }
-
         async function loadAccounts() {
-            if (state.loadingAccount) return;
-            state.loadingAccount = true;
-            accountRowsEl.innerHTML = '<tr><td colspan="5" class="loading">Đang tải tài khoản...</td></tr>';
-            try {
-                const params = new URLSearchParams({ per_page: '50' });
-                if (state.q) params.set('q', state.q);
-                if (state.status) params.set('status', state.status);
-                renderAccounts(await getJson(`/api/admin/accounts?${params}`));
-            } finally {
-                state.loadingAccount = false;
-            }
+            $('accountRows').innerHTML = skeletonRows(5);
+            const params = new URLSearchParams({ per_page: '50' });
+            if (state.q) params.set('q', state.q);
+            if (state.status) params.set('status', state.status);
+            const data = await getJson(`/api/admin/accounts?${params}`);
+            renderAccounts(data);
+            renderDerivedPages();
         }
-
-        async function loadResources() {
-            const type = document.getElementById('resourceType').value;
-            renderResources(await getJson(`/api/admin/resources?type=${encodeURIComponent(type)}&limit=30`));
+        async function loadFoods() {
+            if (state.foods.length) return renderFoods();
+            const data = await getJson('/api/admin/resources?type=foods&limit=50');
+            state.foods = data.data || [];
+            renderFoods();
         }
-
+        async function loadMedicines() {
+            if (state.medicines.length) return renderMedicines();
+            const data = await getJson('/api/admin/resources?type=medicines&limit=50');
+            state.medicines = data.data || [];
+            renderMedicines();
+        }
         async function reloadAll() {
             try {
-                await Promise.all([loadStats(), loadAccounts(), loadResources()]);
+                await Promise.all([loadAccounts(), loadStats()]);
+                state.foods = [];
+                state.medicines = [];
+                if ($('page-foods').classList.contains('active')) await loadFoods();
+                if ($('page-medicines').classList.contains('active')) await loadMedicines();
             } catch (error) {
-                overviewEl.innerHTML = '<div class="card empty" style="grid-column:1/-1">Không tải được dữ liệu. Kiểm tra MySQL và database trolysuckhoe.</div>';
-                accountRowsEl.innerHTML = '<tr><td colspan="5" class="empty">Không tải được danh sách tài khoản.</td></tr>';
                 showToast(error.message);
             }
         }
 
-        document.getElementById('reloadBtn').addEventListener('click', reloadAll);
-        document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
+        function resetFoodForm() {
+            state.editingFoodId = null;
+            $('foodEditorTitle').innerHTML = '<i class="ti ti-apple"></i>Thêm thực phẩm';
+            ['foodName','foodCalories','foodProtein','foodCarb','foodFat','foodType','foodKeywords'].forEach(id => $(id).value = '');
+            $('foodUnit').value = 'Gram';
+            $('foodWeight').value = '100';
+            $('foodHealthy').value = '1';
+        }
+        function fillFoodForm(food) {
+            state.editingFoodId = food.ID;
+            $('foodEditorTitle').innerHTML = `<i class="ti ti-apple"></i>Sửa thực phẩm #${food.ID}`;
+            $('foodName').value = food.Ten || '';
+            $('foodUnit').value = food.DonVi || 'Gram';
+            $('foodCalories').value = food.Calo ?? '';
+            $('foodProtein').value = food.Protein ?? '';
+            $('foodCarb').value = food.Carb ?? '';
+            $('foodFat').value = food.ChatBeo ?? '';
+            $('foodWeight').value = food.KhoiLuongGram ?? 100;
+            $('foodType').value = food.LoaiThucPham || '';
+            $('foodKeywords').value = food.Keywords || '';
+            $('foodHealthy').value = String(food.IsHealthy ?? 1);
+            $('foodName').focus();
+        }
+        function resetMedicineForm() {
+            state.editingMedicineId = null;
+            $('medicineEditorTitle').innerHTML = '<i class="ti ti-pill"></i>Thêm thuốc';
+            ['medicineName','medicineDose','medicineUnit','medicineTimes','medicineActive','medicineGroup','medicineDesc','medicineSideEffect','medicineWarning','medicineNote'].forEach(id => $(id).value = '');
+            $('medicineStatus').value = 'chua_den';
+        }
+        function fillMedicineForm(medicine) {
+            state.editingMedicineId = medicine.ID;
+            $('medicineEditorTitle').innerHTML = `<i class="ti ti-pill"></i>Sửa thuốc #${medicine.ID}`;
+            $('medicineName').value = medicine.TenThuoc || '';
+            $('medicineDose').value = medicine.LieuLuong || '';
+            $('medicineUnit').value = medicine.DonVi || '';
+            $('medicineTimes').value = medicine.SoLanMoiNgay ?? '';
+            $('medicineActive').value = medicine.HoatChat || '';
+            $('medicineGroup').value = medicine.NhomThuoc || '';
+            $('medicineStatus').value = medicine.TrangThai || 'chua_den';
+            $('medicineDesc').value = medicine.MoTa || '';
+            $('medicineSideEffect').value = medicine.TacDungPhu || '';
+            $('medicineWarning').value = medicine.CanhBao || '';
+            $('medicineNote').value = medicine.GhiChu || '';
+            $('medicineName').focus();
+        }
+
+        document.querySelectorAll('[data-view-link]').forEach(link => link.addEventListener('click', () => showView(link.dataset.viewLink)));
+        window.addEventListener('hashchange', () => showView(window.location.hash.replace('#', '')));
+        $('reloadBtn').addEventListener('click', reloadAll);
+        $('settingsRefreshBtn').addEventListener('click', reloadAll);
+        $('closeDrawer').addEventListener('click', closeDrawer);
         overlayEl.addEventListener('click', closeDrawer);
-        document.getElementById('resourceType').addEventListener('change', () => {
-            resetFoodForm();
-            resetMedicineForm();
-            loadResources().catch(error => showToast(error.message));
+        $('profileTabs').addEventListener('click', event => {
+            const tab = event.target.closest('[data-tab]');
+            if (tab) activateTab(tab.dataset.tab);
         });
-        document.getElementById('resetFoodBtn').addEventListener('click', resetFoodForm);
-        document.getElementById('resetMedicineBtn').addEventListener('click', resetMedicineForm);
-
-        document.getElementById('saveFoodBtn').addEventListener('click', async event => {
-            event.target.disabled = true;
-            try {
-                const body = {
-                    Ten: document.getElementById('foodName').value.trim(),
-                    DonVi: document.getElementById('foodUnit').value.trim() || 'Gram',
-                    Calo: document.getElementById('foodCalories').value || 0,
-                    Protein: document.getElementById('foodProtein').value || 0,
-                    Carb: document.getElementById('foodCarb').value || 0,
-                    ChatBeo: document.getElementById('foodFat').value || 0,
-                    KhoiLuongGram: document.getElementById('foodWeight').value || 100,
-                    LoaiThucPham: document.getElementById('foodType').value.trim(),
-                    Keywords: document.getElementById('foodKeywords').value.trim(),
-                    IsHealthy: document.getElementById('foodHealthy').value === '1',
-                };
-                const url = state.editingFoodId ? `/api/admin/foods/${state.editingFoodId}` : '/api/admin/foods';
-                const method = state.editingFoodId ? 'PATCH' : 'POST';
-                const result = await getJson(url, { method, body: JSON.stringify(body) });
-                showToast(result.message || 'Đã lưu thực phẩm');
-                resetFoodForm();
-                await Promise.all([loadResources(), loadStats()]);
-            } catch (error) {
-                showToast(error.message);
-            } finally {
-                event.target.disabled = false;
+        document.querySelectorAll('[data-close-modal]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.closeModal)));
+        $('confirmOkBtn').addEventListener('click', async () => {
+            if (!state.confirmAction) return;
+            const action = state.confirmAction;
+            closeModal('confirmModal');
+            await action();
+        });
+        $('openNoticeModalBtn').addEventListener('click', () => openNoticeModal());
+        $('noticeUserSearchInput').addEventListener('input', event => renderNoticeUserPicker(event.target.value));
+        $('noticeUserResults').addEventListener('click', event => {
+            const btn = event.target.closest('[data-pick-user]');
+            if (btn) selectNoticeUser(btn.dataset.pickUser);
+        });
+        $('noticeAll').addEventListener('change', event => {
+            if (event.target.checked) {
+                $('noticeUserId').value = '';
+                $('selectedNoticeUser').hidden = true;
             }
         });
-
-        document.getElementById('saveMedicineBtn').addEventListener('click', async event => {
-            event.target.disabled = true;
-            try {
-                const body = {
-                    TenThuoc: document.getElementById('medicineName').value.trim(),
-                    MoTa: document.getElementById('medicineDesc').value.trim(),
-                    TacDungPhu: document.getElementById('medicineSideEffect').value.trim(),
-                    LieuLuong: document.getElementById('medicineDose').value.trim(),
-                    DonVi: document.getElementById('medicineUnit').value.trim(),
-                    SoLanMoiNgay: document.getElementById('medicineTimes').value || null,
-                    HoatChat: document.getElementById('medicineActive').value.trim(),
-                    NhomThuoc: document.getElementById('medicineGroup').value.trim(),
-                    TrangThai: document.getElementById('medicineStatus').value.trim() || 'chua_den',
-                    CanhBao: document.getElementById('medicineWarning').value.trim(),
-                    GhiChu: document.getElementById('medicineNote').value.trim(),
-                };
-                const url = state.editingMedicineId ? `/api/admin/medicines/${state.editingMedicineId}` : '/api/admin/medicines';
-                const method = state.editingMedicineId ? 'PATCH' : 'POST';
-                const result = await getJson(url, { method, body: JSON.stringify(body) });
-                showToast(result.message || 'Đã lưu thuốc');
-                resetMedicineForm();
-                await Promise.all([loadResources(), loadStats()]);
-            } catch (error) {
-                showToast(error.message);
-            } finally {
-                event.target.disabled = false;
-            }
-        });
-
-        document.querySelectorAll('[data-view-link]').forEach(link => {
-            link.addEventListener('click', event => {
-                event.preventDefault();
-                showView(link.dataset.viewLink);
-            });
-        });
-
-        window.addEventListener('hashchange', () => {
-            showView(window.location.hash.replace('#', ''));
-        });
-
-        document.getElementById('searchInput').addEventListener('input', event => {
+        $('searchInput').addEventListener('input', event => {
             state.q = event.target.value.trim();
             clearTimeout(loadAccounts.timer);
             loadAccounts.timer = setTimeout(() => loadAccounts().catch(error => showToast(error.message)), 260);
         });
-        document.getElementById('statusFilter').addEventListener('change', event => {
+        $('statusFilter').addEventListener('change', event => {
             state.status = event.target.value;
             loadAccounts().catch(error => showToast(error.message));
         });
-
-        document.getElementById('resourceRows').addEventListener('click', async event => {
-            const editFood = event.target.closest('[data-edit-food]');
-            const deleteFood = event.target.closest('[data-delete-food]');
-            const editMedicine = event.target.closest('[data-edit-medicine]');
-            const deleteMedicine = event.target.closest('[data-delete-medicine]');
-
-            try {
-                if (editFood) {
-                    fillFoodForm(JSON.parse(editFood.dataset.editFood));
-                    return;
-                }
-                if (editMedicine) {
-                    fillMedicineForm(JSON.parse(editMedicine.dataset.editMedicine));
-                    return;
-                }
-                if (deleteFood) {
-                    const result = await getJson(`/api/admin/foods/${deleteFood.dataset.deleteFood}`, { method: 'DELETE' });
-                    showToast(result.message || 'Đã xóa thực phẩm');
-                    await Promise.all([loadResources(), loadStats()]);
-                    return;
-                }
-                if (deleteMedicine) {
-                    const result = await getJson(`/api/admin/medicines/${deleteMedicine.dataset.deleteMedicine}`, { method: 'DELETE' });
-                    showToast(result.message || 'Đã xóa thuốc');
-                    await Promise.all([loadResources(), loadStats()]);
-                }
-            } catch (error) {
-                showToast(error.message);
-            }
+        $('noticeSearch').addEventListener('input', event => {
+            state.noticeQ = event.target.value.trim();
+            renderNoticeLists();
         });
-
-        accountRowsEl.addEventListener('click', async event => {
-            const detailButton = event.target.closest('[data-detail]');
-            const toggleButton = event.target.closest('[data-toggle]');
-
-            if (detailButton) {
-                try {
-                    const data = await getJson(`/api/admin/accounts/${detailButton.dataset.detail}`);
-                    renderAccountDetail(data);
-                    openDrawer();
-                } catch (error) {
-                    showToast(error.message);
-                }
-                return;
+        $('noticeReadFilter').addEventListener('change', event => {
+            state.noticeRead = event.target.value;
+            renderNoticeLists();
+        });
+        $('alertFilter').addEventListener('change', event => {
+            state.alertFilter = event.target.value;
+            renderAlertTable();
+        });
+        document.body.addEventListener('click', async event => {
+            const profileBtn = event.target.closest('[data-profile]');
+            const noticeBtn = event.target.closest('[data-notice-user]');
+            const openAlertsBtn = event.target.closest('[data-open-alerts]');
+            const riskBtn = event.target.closest('[data-risk-filter]');
+            const toggleBtn = event.target.closest('[data-toggle]');
+            const handleAlertBtn = event.target.closest('[data-handle-alert]');
+            if (profileBtn) {
+                await openProfile(Number(profileBtn.dataset.profile));
             }
-
-            if (toggleButton) {
-                toggleButton.disabled = true;
-                try {
-                    const id = toggleButton.dataset.toggle;
-                    const locked = toggleButton.dataset.locked === '1';
-                    const result = await getJson(`/api/admin/accounts/${id}/toggle`, {
-                        method: 'PATCH',
-                        body: JSON.stringify({ locked }),
-                    });
+            if (noticeBtn) {
+                openNoticeModal(Number(noticeBtn.dataset.noticeUser), noticeBtn.dataset.noticeMessage || '');
+            }
+            if (openAlertsBtn) {
+                showView('alerts');
+            }
+            if (riskBtn) {
+                state.alertFilter = riskBtn.dataset.riskFilter || 'all';
+                $('alertFilter').value = state.alertFilter === 'all' ? 'all' : state.alertFilter;
+                showView('alerts');
+                renderAlertTable();
+            }
+            if (toggleBtn) {
+                const id = toggleBtn.dataset.toggle;
+                const locked = toggleBtn.dataset.locked === '1';
+                openConfirm(locked ? 'Bạn có chắc muốn khóa tài khoản này?' : 'Bạn có chắc muốn mở khóa tài khoản này?', async () => {
+                    const result = await getJson(`/api/admin/accounts/${id}/toggle`, { method: 'PUT', body: JSON.stringify({ locked }) });
                     showToast(result.message || 'Đã cập nhật tài khoản');
+                    closeDrawer();
                     await reloadAll();
-                } catch (error) {
-                    showToast(error.message);
-                } finally {
-                    toggleButton.disabled = false;
+                });
+            }
+            if (handleAlertBtn) {
+                const alert = currentAlerts().find(item => item.id === handleAlertBtn.dataset.handleAlert);
+                if (alert) {
+                    localStorage.setItem(`alert-handled:${alert.userId}:${alert.raw.type}:${alert.raw.title}`, '1');
+                    renderRiskSummary();
+                    renderDashboardAlerts();
+                    renderAlertTable();
+                    showToast('Đã đánh dấu cảnh báo là đã xử lý');
                 }
             }
         });
 
-        document.getElementById('saveAccountBtn').addEventListener('click', async event => {
-            if (!state.selectedAccount) return;
+        $('sendNoticeBtn').addEventListener('click', async event => {
             event.target.disabled = true;
             try {
                 const body = {
-                    email: document.getElementById('editEmail').value.trim(),
-                    name: document.getElementById('editName').value.trim(),
-                    gender: document.getElementById('editGender').value,
-                    birthday: document.getElementById('editBirthday').value,
-                    height: document.getElementById('editHeight').value,
-                    weight: document.getElementById('editWeight').value,
-                    avatar: document.getElementById('editAvatar').value.trim(),
-                    active: document.getElementById('editActive').checked,
+                    user_id: $('noticeUserId').value || null,
+                    send_all: $('noticeAll').checked,
+                    type: $('noticeType').value.trim() || 'HeThong',
+                    content: $('noticeContent').value.trim(),
                 };
-                const result = await getJson(`/api/admin/accounts/${state.selectedAccount.id}`, {
-                    method: 'PATCH',
-                    body: JSON.stringify(body),
-                });
-                state.selectedAccount = result.account;
-                showToast(result.message || 'Đã lưu hồ sơ');
-                await reloadAll();
-            } catch (error) {
-                showToast(error.message);
-            } finally {
-                event.target.disabled = false;
-            }
-        });
-
-        document.getElementById('resetPasswordBtn').addEventListener('click', async event => {
-            if (!state.selectedAccount) return;
-            const password = document.getElementById('newPassword').value.trim();
-            if (password.length < 6) {
-                showToast('Mật khẩu cần tối thiểu 6 ký tự');
-                return;
-            }
-            event.target.disabled = true;
-            try {
-                const result = await getJson(`/api/admin/accounts/${state.selectedAccount.id}/password`, {
-                    method: 'PATCH',
-                    body: JSON.stringify({ password }),
-                });
-                document.getElementById('newPassword').value = '';
-                showToast(result.message || 'Đã reset mật khẩu');
-            } catch (error) {
-                showToast(error.message);
-            } finally {
-                event.target.disabled = false;
-            }
-        });
-
-        document.getElementById('saveModeBtn').addEventListener('click', async event => {
-            if (!state.selectedAccount) return;
-            event.target.disabled = true;
-            try {
-                const body = {
-                    goals: document.getElementById('modeGoals').value.trim(),
-                    activity_level: document.getElementById('modeActivity').value,
-                    diet_mode: document.getElementById('modeDiet').value,
-                    water_goal: document.getElementById('modeWaterGoal').value || null,
-                };
-                const result = await getJson(`/api/admin/accounts/${state.selectedAccount.id}/mode`, {
-                    method: 'PATCH',
-                    body: JSON.stringify(body),
-                });
-                showToast(result.message || 'Đã lưu chế độ');
-                const detail = await getJson(`/api/admin/accounts/${state.selectedAccount.id}`);
-                renderAccountDetail(detail);
-            } catch (error) {
-                showToast(error.message);
-            } finally {
-                event.target.disabled = false;
-            }
-        });
-
-        document.getElementById('sendNoticeBtn').addEventListener('click', async event => {
-            event.target.disabled = true;
-            try {
-                const body = {
-                    user_id: document.getElementById('noticeUserId').value || null,
-                    send_all: document.getElementById('noticeAll').checked,
-                    type: document.getElementById('noticeType').value.trim() || 'HeThong',
-                    content: document.getElementById('noticeContent').value.trim(),
-                };
-                const result = await getJson('/api/admin/notifications', {
-                    method: 'POST',
-                    body: JSON.stringify(body),
-                });
-                document.getElementById('noticeContent').value = '';
+                if (!body.send_all && !body.user_id) throw new Error('Vui lòng chọn người nhận hoặc chọn gửi tất cả');
+                if (!body.content) throw new Error('Vui lòng nhập nội dung thông báo');
+                const result = await getJson('/api/admin/notifications', { method: 'POST', body: JSON.stringify(body) });
                 showToast(result.message || 'Đã gửi thông báo');
+                closeModal('noticeModal');
                 await loadStats();
             } catch (error) {
                 showToast(error.message);
@@ -1357,35 +1837,109 @@
                 event.target.disabled = false;
             }
         });
-
-        document.getElementById('noticeList').addEventListener('click', async event => {
+        function handleNoticeClick(event) {
             const readButton = event.target.closest('[data-read-notice]');
             const deleteButton = event.target.closest('[data-delete-notice]');
             if (!readButton && !deleteButton) return;
-
             const id = readButton?.dataset.readNotice || deleteButton?.dataset.deleteNotice;
-            const method = deleteButton ? 'DELETE' : 'PATCH';
+            const method = deleteButton ? 'DELETE' : 'PUT';
             const url = deleteButton ? `/api/admin/notifications/${id}` : `/api/admin/notifications/${id}/read`;
-
-            try {
+            openConfirm(deleteButton ? 'Bạn có chắc muốn xóa thông báo này?' : 'Đánh dấu thông báo này là đã đọc?', async () => {
                 const result = await getJson(url, { method });
                 showToast(result.message || 'Đã cập nhật thông báo');
                 await loadStats();
+            });
+        }
+        $('noticeList').addEventListener('click', handleNoticeClick);
+        $('noticeListPage').addEventListener('click', handleNoticeClick);
+
+        $('saveFoodBtn').addEventListener('click', async event => {
+            event.target.disabled = true;
+            try {
+                const body = {
+                    Ten: $('foodName').value.trim(),
+                    DonVi: $('foodUnit').value.trim() || 'Gram',
+                    Calo: $('foodCalories').value || 0,
+                    Protein: $('foodProtein').value || 0,
+                    Carb: $('foodCarb').value || 0,
+                    ChatBeo: $('foodFat').value || 0,
+                    KhoiLuongGram: $('foodWeight').value || 100,
+                    LoaiThucPham: $('foodType').value.trim(),
+                    Keywords: $('foodKeywords').value.trim(),
+                    IsHealthy: $('foodHealthy').value === '1',
+                };
+                const url = state.editingFoodId ? `/api/admin/foods/${state.editingFoodId}` : '/api/admin/foods';
+                const method = state.editingFoodId ? 'PUT' : 'POST';
+                const result = await getJson(url, { method, body: JSON.stringify(body) });
+                showToast(result.message || 'Đã lưu thực phẩm');
+                resetFoodForm();
+                state.foods = [];
+                await loadFoods();
+                await loadStats();
             } catch (error) {
                 showToast(error.message);
+            } finally {
+                event.target.disabled = false;
             }
         });
-
-        document.getElementById('alertList')?.addEventListener('click', event => {
-            const button = event.target.closest('[data-alert-notice]');
-            if (!button) return;
-            showView('sendNotice');
-            document.getElementById('noticeUserId').value = button.dataset.alertNotice || '';
-            document.getElementById('noticeType').value = 'HealthRisk';
-            document.getElementById('noticeContent').value = button.dataset.alertMessage || '';
+        $('saveMedicineBtn').addEventListener('click', async event => {
+            event.target.disabled = true;
+            try {
+                const body = {
+                    TenThuoc: $('medicineName').value.trim(),
+                    MoTa: $('medicineDesc').value.trim(),
+                    TacDungPhu: $('medicineSideEffect').value.trim(),
+                    LieuLuong: $('medicineDose').value.trim(),
+                    DonVi: $('medicineUnit').value.trim(),
+                    SoLanMoiNgay: $('medicineTimes').value || null,
+                    HoatChat: $('medicineActive').value.trim(),
+                    NhomThuoc: $('medicineGroup').value.trim(),
+                    TrangThai: $('medicineStatus').value.trim() || 'chua_den',
+                    CanhBao: $('medicineWarning').value.trim(),
+                    GhiChu: $('medicineNote').value.trim(),
+                };
+                const url = state.editingMedicineId ? `/api/admin/medicines/${state.editingMedicineId}` : '/api/admin/medicines';
+                const method = state.editingMedicineId ? 'PUT' : 'POST';
+                const result = await getJson(url, { method, body: JSON.stringify(body) });
+                showToast(result.message || 'Đã lưu thuốc');
+                resetMedicineForm();
+                state.medicines = [];
+                await loadMedicines();
+                await loadStats();
+            } catch (error) {
+                showToast(error.message);
+            } finally {
+                event.target.disabled = false;
+            }
+        });
+        $('resetFoodBtn').addEventListener('click', resetFoodForm);
+        $('resetMedicineBtn').addEventListener('click', resetMedicineForm);
+        $('foodRows').addEventListener('click', event => {
+            const edit = event.target.closest('[data-edit-food]');
+            const del = event.target.closest('[data-delete-food]');
+            if (edit) fillFoodForm(state.foods[Number(edit.dataset.editFood)]);
+            if (del) openConfirm('Bạn có chắc muốn xóa thực phẩm này?', async () => {
+                const result = await getJson(`/api/admin/foods/${del.dataset.deleteFood}`, { method: 'DELETE' });
+                showToast(result.message || 'Đã xóa thực phẩm');
+                state.foods = [];
+                await loadFoods();
+                await loadStats();
+            });
+        });
+        $('medicineRows').addEventListener('click', event => {
+            const edit = event.target.closest('[data-edit-medicine]');
+            const del = event.target.closest('[data-delete-medicine]');
+            if (edit) fillMedicineForm(state.medicines[Number(edit.dataset.editMedicine)]);
+            if (del) openConfirm('Bạn có chắc muốn xóa thuốc này?', async () => {
+                const result = await getJson(`/api/admin/medicines/${del.dataset.deleteMedicine}`, { method: 'DELETE' });
+                showToast(result.message || 'Đã xóa thuốc');
+                state.medicines = [];
+                await loadMedicines();
+                await loadStats();
+            });
         });
 
-        showView(window.location.hash.replace('#', '') || 'overview');
+        showView(window.location.hash.replace('#', '') || 'dashboard');
         reloadAll();
     </script>
 </body>
