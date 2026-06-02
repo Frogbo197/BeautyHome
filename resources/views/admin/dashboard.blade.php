@@ -579,6 +579,127 @@
         .notice-title { color: #37474f; font-size: 14px; font-weight: 900; }
         .notice-msg { margin-top: 3px; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
 
+        .ops-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+        }
+        .ops-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+            padding: 16px;
+            border: 1.5px solid var(--blue-mid);
+            border-radius: 18px;
+            background: linear-gradient(135deg, #ffffff, #f4fbff);
+        }
+        .ops-card .stat-icon { margin: 0; flex: 0 0 auto; }
+        .ops-card strong {
+            display: block;
+            color: #121b73;
+            font-family: var(--font-head);
+            font-size: 26px;
+            line-height: 1;
+        }
+        .follow-list, .resource-grid, .user-grid {
+            display: grid;
+            gap: 14px;
+        }
+        .follow-card, .resource-card, .user-card {
+            min-width: 0;
+            border: 1.5px solid var(--line);
+            border-radius: 18px;
+            background: var(--white);
+            padding: 16px;
+            box-shadow: 0 8px 22px rgba(79, 195, 247, .08);
+        }
+        .follow-card {
+            display: grid;
+            grid-template-columns: minmax(220px, 1.1fr) repeat(3, minmax(130px, .65fr)) auto;
+            align-items: center;
+            gap: 14px;
+        }
+        .follow-card.alert-high { border-color: #ffab91; background: #fff8f3; }
+        .follow-card.alert-medium { border-color: #ffcc80; background: #fffdf1; }
+        .field-label {
+            margin-bottom: 3px;
+            color: var(--muted);
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+        }
+        .resource-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .resource-card {
+            display: grid;
+            gap: 13px;
+        }
+        .resource-head {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            min-width: 0;
+        }
+        .resource-emoji {
+            display: grid;
+            width: 52px;
+            height: 52px;
+            place-items: center;
+            flex: 0 0 auto;
+            border-radius: 16px;
+            background: var(--blue-soft);
+            font-size: 26px;
+        }
+        .macro-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .macro-box {
+            min-width: 0;
+            padding: 10px;
+            border-radius: 13px;
+            background: var(--bg);
+            text-align: center;
+        }
+        .macro-box strong {
+            display: block;
+            color: var(--blue-dark);
+            font-size: 15px;
+        }
+        .user-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .user-card {
+            display: grid;
+            gap: 14px;
+        }
+        .user-card-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .user-stats {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .user-stat {
+            min-width: 0;
+            padding: 9px 6px;
+            border-radius: 12px;
+            background: var(--bg);
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800;
+            text-align: center;
+        }
+        .user-stat strong {
+            display: block;
+            color: var(--blue-dark);
+            font-size: 16px;
+        }
+
         .empty-state {
             display: grid;
             place-items: center;
@@ -782,8 +903,11 @@
             .sidebar-nav nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; }
             .nav-section, .sidebar-footer { display: none; }
             .main { margin-left: 0; }
-            .grid-2, .profile-layout { grid-template-columns: 1fr; }
+            .grid-2, .profile-layout, .resource-grid, .user-grid { grid-template-columns: 1fr; }
             .grid-5 { grid-template-columns: repeat(3, 1fr); }
+            .ops-grid { grid-template-columns: 1fr; }
+            .follow-card { grid-template-columns: 1fr 1fr; }
+            .follow-card .actions { grid-column: 1 / -1; }
         }
         @media (max-width: 760px) {
             body { font-size: 13px; }
@@ -793,7 +917,7 @@
             .page { padding: 16px 12px 24px; }
             .section-header { display: grid; }
             .section-title { font-size: 24px; }
-            .grid-3, .grid-4, .grid-5, .form-grid { grid-template-columns: 1fr; }
+            .grid-3, .grid-4, .grid-5, .form-grid, .follow-card, .macro-grid, .user-stats { grid-template-columns: 1fr; }
             .card { padding: 16px; }
             .data-table { min-width: 760px; }
             .drawer { width: 100vw; }
@@ -813,12 +937,11 @@
             <nav aria-label="Điều hướng quản trị">
                 <button class="nav-item active" type="button" data-view-link="dashboard">📊 Dashboard</button>
                 <button class="nav-item" type="button" data-view-link="users">👥 Người dùng <span class="nav-badge" id="navUserCount">0</span></button>
-                <button class="nav-item" type="button" data-view-link="alerts">⚠️ Cảnh báo sức khỏe <span class="nav-badge" id="navAlertCount">0</span></button>
+                <button class="nav-item" type="button" data-view-link="alerts">⚠️ Người dùng cần theo dõi <span class="nav-badge" id="navAlertCount">0</span></button>
                 <button class="nav-item" type="button" data-view-link="notifications">🔔 Thông báo <span class="nav-badge" id="navNoticeCount">0</span></button>
                 <button class="nav-item" type="button" data-view-link="foods">🥗 Thực phẩm</button>
                 <button class="nav-item" type="button" data-view-link="medicines">💊 Thuốc</button>
                 <button class="nav-item" type="button" data-view-link="activities">🏃 Hoạt động</button>
-                <button class="nav-item" type="button" data-view-link="reports">📈 Báo cáo</button>
                 <button class="nav-item" type="button" data-view-link="settings">⚙️ Cài đặt</button>
             </nav>
         </div>
@@ -859,34 +982,34 @@
                 </div>
             </div>
 
-            <div class="section-header" style="margin-top:26px">
-                <div>
-                    <div class="section-title" style="font-size:23px">Cảnh báo sức khỏe nổi bật</div>
-                    <div class="section-subtitle">Các nhóm rủi ro cần quản trị viên theo dõi</div>
-                </div>
-            </div>
-            <div class="grid grid-4" id="riskSummary"></div>
+            <section class="card" style="margin-top:22px">
+                <div class="card-title"><i class="ti ti-chart-bar"></i>Thống kê 7 ngày gần nhất</div>
+                <div class="section-subtitle" style="margin:-8px 0 16px">Theo dõi số người dùng mới và thông báo mới theo từng ngày</div>
+                <div class="grid" id="weeklyBars"></div>
+            </section>
 
             <div class="grid grid-2" style="margin-top:22px">
                 <section class="card">
-                    <div class="card-title"><i class="ti ti-alert-triangle"></i>Cảnh báo mới nhất</div>
+                    <div class="card-title"><i class="ti ti-alert-triangle"></i>Cảnh báo cần xử lý</div>
                     <div class="notice-list" id="dashboardAlerts"></div>
                 </section>
                 <section class="card">
-                    <div class="card-title"><i class="ti ti-chart-bar"></i>Thống kê 7 ngày qua</div>
-                    <div class="grid" id="weeklyBars"></div>
+                    <div class="card-title"><i class="ti ti-bell"></i>Thông báo mới nhất</div>
+                    <div class="notice-list" id="noticeList"></div>
                 </section>
             </div>
 
             <div class="grid grid-2" style="margin-top:22px">
                 <section class="card">
-                    <div class="card-title"><i class="ti ti-apps"></i>Các tính năng</div>
-                    <div class="grid grid-3" id="featureList"></div>
+                    <div class="card-title"><i class="ti ti-activity"></i>Hoạt động hệ thống</div>
+                    <div class="ops-grid" id="systemActivity">
+                        <div class="loading-skeleton card"><div class="skeleton-line"></div><div class="skeleton-line"></div></div>
+                    </div>
                 </section>
                 <section class="card">
-                    <div class="card-title"><i class="ti ti-bell"></i>Thông báo gần đây</div>
+                    <div class="card-title"><i class="ti ti-category"></i>Thống kê nhanh</div>
                     <div class="mini-stats" id="notificationSummary" style="margin-bottom:14px"></div>
-                    <div class="notice-list" id="noticeList"></div>
+                    <div class="notice-list" id="notificationTypeList"></div>
                 </section>
             </div>
         </section>
@@ -910,21 +1033,8 @@
                         <option value="locked">Đã khóa</option>
                     </select>
                 </div>
-                <div class="table-wrap">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Người dùng</th>
-                                <th>Trạng thái</th>
-                                <th>Ngày tạo</th>
-                                <th>Lần đăng nhập cuối</th>
-                                <th>Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="accountRows">
-                            <tr><td colspan="5"><div class="loading-skeleton"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></td></tr>
-                        </tbody>
-                    </table>
+                <div class="user-grid" id="accountRows">
+                    <div class="loading-skeleton"><div class="skeleton-line"></div><div class="skeleton-line"></div></div>
                 </div>
             </section>
         </section>
@@ -932,8 +1042,8 @@
         <section class="page" id="page-alerts" data-view-panel="alerts">
             <div class="section-header">
                 <div>
-                    <div class="section-title">Cảnh báo sức khỏe</div>
-                    <div class="section-subtitle">Theo dõi các dấu hiệu bất thường và nhắc nhở người dùng</div>
+                    <div class="section-title">Người dùng cần theo dõi</div>
+                    <div class="section-subtitle">Ưu tiên người dùng có dấu hiệu sức khỏe bất thường và cần admin xử lý</div>
                 </div>
             </div>
             <div class="toolbar">
@@ -947,21 +1057,7 @@
                 <button class="btn btn-ghost" type="button" data-open-alerts><i class="ti ti-refresh"></i>Tải lại</button>
             </div>
             <section class="card">
-                <div class="table-wrap">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Người dùng</th>
-                                <th>Loại cảnh báo</th>
-                                <th>Mức độ</th>
-                                <th>Thời gian phát hiện</th>
-                                <th>Trạng thái</th>
-                                <th>Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="alertRows"></tbody>
-                    </table>
-                </div>
+                <div class="follow-list" id="alertRows"></div>
             </section>
         </section>
 
@@ -1016,12 +1112,7 @@
                         <button class="btn btn-ghost" id="resetFoodBtn" type="button">Nhập mới</button>
                     </div>
                 </div>
-                <div class="table-wrap">
-                    <table class="data-table">
-                        <thead><tr><th>Món ăn</th><th>Calories</th><th>Protein</th><th>Carb</th><th>Fat</th><th>Healthy</th><th>Thao tác</th></tr></thead>
-                        <tbody id="foodRows"></tbody>
-                    </table>
-                </div>
+                <div class="resource-grid" id="foodRows"></div>
             </section>
         </section>
 
@@ -1053,23 +1144,13 @@
                         <button class="btn btn-ghost" id="resetMedicineBtn" type="button">Nhập mới</button>
                     </div>
                 </div>
-                <div class="table-wrap">
-                    <table class="data-table">
-                        <thead><tr><th>Thuốc</th><th>Hoạt chất</th><th>Liều dùng</th><th>Nhóm thuốc</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
-                        <tbody id="medicineRows"></tbody>
-                    </table>
-                </div>
+                <div class="resource-grid" id="medicineRows"></div>
             </section>
         </section>
 
         <section class="page" id="page-activities" data-view-panel="activities">
             <div class="section-header"><div><div class="section-title">Hoạt động</div><div class="section-subtitle">Tổng hợp hoạt động vận động từ dữ liệu người dùng</div></div></div>
             <section class="card"><div id="activitySummary" class="grid grid-3"></div></section>
-        </section>
-
-        <section class="page" id="page-reports" data-view-panel="reports">
-            <div class="section-header"><div><div class="section-title">Báo cáo</div><div class="section-subtitle">Báo cáo tổng quan từ dữ liệu hiện có</div></div></div>
-            <section class="card"><div id="reportSummary" class="grid grid-3"></div></section>
         </section>
 
         <section class="page" id="page-settings" data-view-panel="settings">
@@ -1199,12 +1280,11 @@
         const pageTitles = {
             dashboard: '📊 Dashboard',
             users: '👥 Người dùng',
-            alerts: '⚠️ Cảnh báo sức khỏe',
+            alerts: '⚠️ Người dùng cần theo dõi',
             notifications: '🔔 Thông báo',
             foods: '🥗 Thực phẩm',
             medicines: '💊 Thuốc',
             activities: '🏃 Hoạt động',
-            reports: '📈 Báo cáo',
             settings: '⚙️ Cài đặt',
         };
         const urlParams = new URLSearchParams(window.location.search);
@@ -1246,7 +1326,12 @@
             return escapeHtml((parts.length > 1 ? parts[0][0] + parts.at(-1)[0] : raw.slice(0, 2)).toUpperCase());
         }
         function stripUserId(text) {
-            return String(text || 'Người dùng').replace(/\s*\(#\d+\)\s*$/, '');
+            const cleaned = String(text || 'Người dùng')
+                .replace(/\s*\(#\d+\)\s*$/, '')
+                .replace(/\s*#\d+\s*$/, '')
+                .replace(/^user$/i, 'Người dùng')
+                .replace(/^nguoi dung$/i, 'Người dùng');
+            return cleaned.trim() || 'Người dùng';
         }
         function userAvatar(user) {
             if (user?.avatar) return `<div class="avatar"><img src="${escapeHtml(user.avatar)}" alt=""></div>`;
@@ -1347,31 +1432,65 @@
             return true;
         }
 
+        function statValueByLabel(items, keywords) {
+            const found = (items || []).find(item => keywords.some(keyword => String(item.label || '').toLowerCase().includes(keyword)));
+            return Number(found?.value || 0);
+        }
         function renderOverview(items) {
-            const icons = ['ti-users', 'ti-lock', 'ti-bell', 'ti-alert-triangle', 'ti-heartbeat'];
-            $('overviewStats').innerHTML = (items || []).map((item, index) => {
-                const tone = item.tone || (index === 0 ? 'blue' : 'mint');
-                return `<article class="stat-card tone-${tone === 'sky' ? 'blue' : tone}">
-                    <div class="stat-icon"><i class="ti ${icons[index] || 'ti-chart-bar'}"></i></div>
-                    <div class="stat-value">${number(item.value)}</div>
-                    <div class="stat-label">${escapeHtml(item.label)}</div>
-                    <div class="stat-note">${escapeHtml(item.note || '')}</div>
-                </article>`;
-            }).join('');
+            const totalAccounts = statValueByLabel(items, ['tai khoan']);
+            const totalNotifications = statValueByLabel(items, ['thong bao']);
+            const totalFoods = state.foods.length;
+            const totalMedicines = state.medicines.length;
+            const totalActivities = state.accounts.reduce((sum, account) => sum + Number(account.stats?.activities || 0), 0);
+            const totalAlerts = currentAlerts().length;
+            const cards = [
+                ['tone-blue', 'ti-users', 'Người dùng', totalAccounts, 'Tài khoản trong hệ thống'],
+                ['tone-lavender', 'ti-bell', 'Thông báo', totalNotifications, 'Thông báo đã gửi'],
+                ['tone-peach', 'ti-apple', 'Thực phẩm', totalFoods, 'Kho dữ liệu dinh dưỡng'],
+                ['tone-mint', 'ti-pill', 'Thuốc', totalMedicines, 'Danh mục thuốc hiện có'],
+                ['tone-blue', 'ti-run', 'Hoạt động', totalActivities, 'Lịch sử vận động'],
+                ['tone-rose', 'ti-alert-triangle', 'Cảnh báo', totalAlerts, 'Người dùng cần theo dõi'],
+            ];
+            $('overviewStats').innerHTML = cards.map(([tone, icon, label, value, note]) => `<article class="stat-card ${tone}">
+                <div class="stat-icon"><i class="ti ${icon}"></i></div>
+                <div class="stat-value">${number(value)}</div>
+                <div class="stat-label">${label}</div>
+                <div class="stat-note">${note}</div>
+            </article>`).join('');
+        }
+        function featureValue(items, keywords) {
+            const found = (items || []).find(item => keywords.some(keyword => String(item.label || '').toLowerCase().includes(keyword)));
+            return Number(found?.value || 0);
+        }
+        function renderSystemActivity(items = []) {
+            const totalMeals = featureValue(items, ['dinh dưỡng', 'dinh duong', 'bua an', 'bữa ăn']);
+            const totalWater = featureValue(items, ['uong nuoc', 'uống nước', 'nuoc']);
+            const totalMedicines = featureValue(items, ['thuoc', 'thuốc']);
+            const totalActivities = featureValue(items, ['van dong', 'vận động', 'hoat dong']);
+            const cards = [
+                ['🍽', 'Tổng bữa ăn', totalMeals, 'Bản ghi dinh dưỡng của người dùng'],
+                ['💧', 'Tổng ghi nhận nước', totalWater, 'Số lần theo dõi nước uống'],
+                ['💊', 'Tổng lịch sử thuốc', totalMedicines, 'Lịch sử và lịch dùng thuốc'],
+                ['🏃', 'Tổng hoạt động', totalActivities, 'Hoạt động vận động đã ghi nhận'],
+            ];
+            $('systemActivity').innerHTML = cards.map(([icon, label, value, note]) => `<article class="ops-card">
+                <div class="stat-icon">${icon}</div>
+                <div><strong>${number(value)}</strong><div class="primary-text">${label}</div><div class="muted">${note}</div></div>
+            </article>`).join('');
         }
         function renderRiskSummary() {
             const alerts = currentAlerts();
             const high = alerts.filter(a => a.severity === 'high').length;
             const watch = alerts.filter(a => a.severity !== 'high').length;
-            const missedMedicine = alerts.filter(a => /thuoc|thuốc/i.test(`${a.type} ${a.title} ${a.message}`)).length;
-            const waterDrop = alerts.filter(a => /nuoc|nước/i.test(`${a.type} ${a.title} ${a.message}`)).length;
+            const open = alerts.filter(a => !a.handled).length;
+            const done = alerts.filter(a => a.handled).length;
             const cards = [
                 ['tone-rose', 'ti-alert-octagon', 'Nguy cơ cao', high, 'Cần xử lý ngay', 'high'],
                 ['tone-peach', 'ti-eye', 'Cần theo dõi', watch, 'Theo dõi trong 24h', 'watch'],
-                ['tone-lavender', 'ti-pill-off', 'Quên uống thuốc', missedMedicine, 'Có dấu hiệu bỏ lỡ', 'all'],
-                ['tone-mint', 'ti-droplet-off', 'Bỏ theo dõi nước uống', waterDrop, 'Lượng nước bất thường', 'all'],
+                ['tone-lavender', 'ti-clock-exclamation', 'Chưa xử lý', open, 'Đang chờ admin xử lý', 'open'],
+                ['tone-mint', 'ti-circle-check', 'Đã xử lý', done, 'Đã được admin đánh dấu', 'done'],
             ];
-            $('riskSummary').innerHTML = cards.map(([tone, icon, label, value, note, filter]) => `
+            if ($('riskSummary')) $('riskSummary').innerHTML = cards.map(([tone, icon, label, value, note, filter]) => `
                 <button class="risk-card ${tone}" type="button" data-risk-filter="${filter}">
                     <div class="stat-icon"><i class="ti ${icon}"></i></div>
                     <div class="stat-value">${number(value)}</div>
@@ -1389,33 +1508,36 @@
             return `<article class="notice-card ${alert.severity === 'high' ? 'alert-high' : 'alert-medium'}">
                 ${userAvatar(alert)}
                 <div style="min-width:0;flex:1">
-                    <div class="notice-title">${escapeHtml(alert.name)} ${badgeSeverity(alert.severity)}</div>
+                    <div class="notice-title">${escapeHtml(alert.name)}</div>
                     <div class="muted">${escapeHtml(alert.email)}</div>
-                    <div class="notice-msg"><strong>${escapeHtml(alert.title)}</strong> - ${escapeHtml(alert.message)}</div>
+                    <div class="notice-msg"><span class="field-label">Mức độ</span>${badgeSeverity(alert.severity)}</div>
+                    <div class="notice-msg"><span class="field-label">Vấn đề</span><strong>${escapeHtml(alert.title)}</strong></div>
+                    <div class="notice-msg"><span class="field-label">Thời gian</span>${dateTime(alert.time)}</div>
                     <div class="actions" style="margin-top:10px">
                         <button class="btn btn-ghost btn-sm" type="button" data-profile="${alert.userId}"><i class="ti ti-user"></i>Xem hồ sơ</button>
                         <button class="btn btn-sm" type="button" data-notice-user="${alert.userId}" data-notice-message="${escapeHtml(alert.message)}"><i class="ti ti-send"></i>Gửi thông báo</button>
+                        <button class="btn btn-success btn-sm" type="button" data-handle-alert="${alert.id}"><i class="ti ti-check"></i>Xử lý</button>
                     </div>
                 </div>
             </article>`;
         }
         function renderAlertTable() {
             const rows = currentAlerts().filter(alertMatchesFilter);
-            $('alertRows').innerHTML = rows.length ? rows.map(alert => `<tr>
-                <td><div class="avatar-row">${userAvatar(alert)}<div><div class="primary-text">${escapeHtml(alert.name)}</div><div class="muted">${escapeHtml(alert.email)}</div></div></div></td>
-                <td><span class="tag tag-blue">${escapeHtml(alert.type)}</span><div class="muted">${escapeHtml(alert.title)}</div></td>
-                <td>${badgeSeverity(alert.severity)}</td>
-                <td>${dateTime(alert.time)}</td>
-                <td>${alert.handled ? '<span class="badge badge-done">Đã xử lý</span>' : '<span class="badge badge-high">Chưa xử lý</span>'}</td>
-                <td><div class="actions">
+            $('alertRows').innerHTML = rows.length ? rows.map(alert => `<article class="follow-card ${alert.severity === 'high' ? 'alert-high' : 'alert-medium'}">
+                <div class="avatar-row">${userAvatar(alert)}<div><div class="primary-text">${escapeHtml(alert.name)}</div><div class="muted">${escapeHtml(alert.email)}</div></div></div>
+                <div><div class="field-label">Loại cảnh báo</div><span class="tag tag-blue">${escapeHtml(alert.type)}</span><div class="muted">${escapeHtml(alert.title)}</div></div>
+                <div><div class="field-label">Mức độ</div>${badgeSeverity(alert.severity)}</div>
+                <div><div class="field-label">Thời gian</div><div class="primary-text">${dateTime(alert.time)}</div><div style="margin-top:6px">${alert.handled ? '<span class="badge badge-done">Đã xử lý</span>' : '<span class="badge badge-high">Chưa xử lý</span>'}</div></div>
+                <div class="actions">
                     <button class="btn btn-ghost btn-sm" type="button" data-profile="${alert.userId}">Xem hồ sơ</button>
                     <button class="btn btn-sm" type="button" data-notice-user="${alert.userId}" data-notice-message="${escapeHtml(alert.message)}">Gửi thông báo</button>
-                    <button class="btn btn-success btn-sm" type="button" data-handle-alert="${alert.id}">Đã xử lý</button>
-                </div></td>
-            </tr>`).join('') : `<tr><td colspan="6">${emptyState('✅', 'Không có cảnh báo phù hợp', 'Bộ lọc hiện tại chưa có cảnh báo nào.', '<button class="btn btn-ghost" type="button" data-open-alerts>Tải lại cảnh báo</button>')}</td></tr>`;
+                    <button class="btn btn-success btn-sm" type="button" data-handle-alert="${alert.id}">Xử lý</button>
+                </div>
+            </article>`).join('') : emptyState('✅', 'Không có người dùng phù hợp', 'Bộ lọc hiện tại chưa có người dùng cần theo dõi.', '<button class="btn btn-ghost" type="button" data-open-alerts>Tải lại dữ liệu</button>');
         }
 
         function renderFeatures(items) {
+            if (!$('featureList')) return;
             $('featureList').innerHTML = (items || []).length ? items.map(item => `
                 <div class="notice-card" style="background:var(--bg)">
                     <div class="notice-icon"><i class="ti ti-activity"></i></div>
@@ -1424,14 +1546,35 @@
             `).join('') : emptyState('📦', 'Chưa có dữ liệu tính năng', 'Dữ liệu module sẽ hiển thị khi hệ thống có bản ghi.');
         }
         function renderWeekly(days) {
+            if (!days || !days.length) {
+                $('weeklyBars').innerHTML = emptyState('📊', 'Chưa có thống kê 7 ngày', 'Khi hệ thống phát sinh tài khoản hoặc thông báo mới, biểu đồ sẽ hiển thị tại đây.');
+                return;
+            }
             const max = Math.max(1, ...days.map(day => Math.max(day.accounts || 0, day.notifications || 0)));
-            $('weeklyBars').innerHTML = `<div style="display:flex;align-items:flex-end;gap:12px;height:180px">${days.map(day => {
-                const h = Math.max(10, Math.round((Math.max(day.accounts || 0, day.notifications || 0) / max) * 100));
-                return `<div style="flex:1;display:grid;gap:8px;justify-items:center;align-items:end;height:100%">
-                    <div title="${number(day.accounts)} tài khoản, ${number(day.notifications)} thông báo" style="width:100%;height:${h}%;border-radius:10px 10px 2px 2px;background:linear-gradient(180deg,var(--blue),#0b84c6)"></div>
-                    <span class="muted">${escapeHtml(day.label)}</span>
+            const totalAccounts = days.reduce((sum, day) => sum + Number(day.accounts || 0), 0);
+            const totalNotifications = days.reduce((sum, day) => sum + Number(day.notifications || 0), 0);
+            $('weeklyBars').innerHTML = `
+                <div class="mini-stats" style="margin-bottom:14px">
+                    <span>👥 Người dùng mới: ${number(totalAccounts)}</span>
+                    <span>🔔 Thông báo mới: ${number(totalNotifications)}</span>
+                </div>
+                <div style="display:flex;align-items:flex-end;gap:12px;height:190px">
+                    ${days.map(day => {
+                        const accountHeight = Math.max(8, Math.round((Number(day.accounts || 0) / max) * 100));
+                        const noticeHeight = Math.max(8, Math.round((Number(day.notifications || 0) / max) * 100));
+                        return `<div style="flex:1;display:grid;gap:8px;justify-items:center;align-items:end;height:100%;min-width:54px">
+                            <div style="display:flex;align-items:flex-end;justify-content:center;gap:5px;width:100%;height:145px">
+                                <div title="Người dùng mới: ${number(day.accounts)}" style="width:38%;height:${accountHeight}%;border-radius:10px 10px 2px 2px;background:linear-gradient(180deg,var(--blue),#0b84c6)"></div>
+                                <div title="Thông báo mới: ${number(day.notifications)}" style="width:38%;height:${noticeHeight}%;border-radius:10px 10px 2px 2px;background:linear-gradient(180deg,var(--lavender-dark),#9fa8da)"></div>
+                            </div>
+                            <span class="muted">${escapeHtml(day.label)}</span>
+                        </div>`;
+                    }).join('')}
+                </div>
+                <div class="mini-stats" style="margin-top:12px">
+                    <span style="border-left:10px solid var(--blue)">Người dùng mới</span>
+                    <span style="border-left:10px solid var(--lavender-dark)">Thông báo mới</span>
                 </div>`;
-            }).join('')}</div>`;
         }
 
         function notificationMatches(item) {
@@ -1460,7 +1603,25 @@
             state.notifications = data.recent || [];
             $('notificationSummary').innerHTML = `<span>Tổng: ${number(data.total)}</span><span>Chưa đọc: ${number(data.unread)}</span><span>Đã đọc: ${number(data.read)}</span><span>Hôm nay: ${number(data.today)}</span>`;
             $('navNoticeCount').textContent = number(data.unread || 0);
+            renderNotificationTypes(data.by_type || []);
             renderNoticeLists();
+        }
+        function renderNotificationTypes(items) {
+            const iconForType = (label = '') => {
+                const text = String(label).toLowerCase();
+                if (/thuoc|thuốc/.test(text)) return '💊';
+                if (/nuoc|nước/.test(text)) return '💧';
+                if (/canh bao|cảnh báo|risk|health/.test(text)) return '⚠️';
+                if (/bua|bữa|dinh/.test(text)) return '🍽';
+                return '🔔';
+            };
+            $('notificationTypeList').innerHTML = items.length ? items.map(item => `<article class="notice-card">
+                <div class="notice-icon">${iconForType(item.label)}</div>
+                <div style="min-width:0;flex:1">
+                    <div class="notice-title">${escapeHtml(item.label || 'Thông báo')}</div>
+                    <div class="notice-msg">${number(item.value)} thông báo</div>
+                </div>
+            </article>`).join('') : emptyState('🔔', 'Chưa có loại thông báo phổ biến', 'Khi hệ thống phát sinh thông báo, thống kê nhanh sẽ xuất hiện tại đây.');
         }
         function renderNoticeLists() {
             const filtered = state.notifications.filter(notificationMatches);
@@ -1480,40 +1641,68 @@
         }
         function renderAccountRows() {
             const rows = state.accounts;
-            $('accountRows').innerHTML = rows.length ? rows.map(account => `<tr>
-                <td><div class="avatar-row">${userAvatar(account)}<div><div class="primary-text">${escapeHtml(account.name)}</div><div class="muted">${escapeHtml(account.email)}</div></div></div></td>
-                <td><span class="badge ${account.is_active ? 'badge-active' : 'badge-locked'}">${escapeHtml(account.status)}</span></td>
-                <td>${dateTime(account.created_at)}</td>
-                <td>${dateTime(account.last_login)}</td>
-                <td><div class="actions">
+            $('accountRows').innerHTML = rows.length ? rows.map(account => `<article class="user-card">
+                <div class="user-card-head">
+                    <div class="avatar-row">${userAvatar(account)}<div><div class="primary-text">${escapeHtml(account.name)}</div><div class="muted">${escapeHtml(account.email)}</div></div></div>
+                    <span class="badge ${account.is_active ? 'badge-active' : 'badge-locked'}">${escapeHtml(account.status)}</span>
+                </div>
+                <div class="mini-stats">
+                    <span>Ngày tạo: ${dateTime(account.created_at)}</span>
+                    <span>Đăng nhập cuối: ${dateTime(account.last_login)}</span>
+                </div>
+                <div class="user-stats">
+                    <div class="user-stat">🍽<strong>${number(account.stats?.meals)}</strong>Bữa ăn</div>
+                    <div class="user-stat">💧<strong>${number(account.stats?.water_logs)}</strong>Uống nước</div>
+                    <div class="user-stat">💊<strong>${number(account.stats?.medicines)}</strong>Thuốc</div>
+                    <div class="user-stat">🏃<strong>${number(account.stats?.activities)}</strong>Hoạt động</div>
+                    <div class="user-stat">🔔<strong>${number(account.stats?.notifications)}</strong>Thông báo</div>
+                </div>
+                <div class="actions">
                     <button class="btn btn-ghost btn-sm" data-profile="${account.id}" type="button">Xem chi tiết</button>
                     <button class="btn ${account.is_active ? 'btn-danger' : 'btn-success'} btn-sm" data-toggle="${account.id}" data-locked="${account.is_active ? '1' : '0'}" type="button">${account.is_active ? 'Khóa' : 'Mở khóa'}</button>
-                </div></td>
-            </tr>`).join('') : `<tr><td colspan="5">${emptyState('👥', 'Chưa có người dùng', 'Danh sách người dùng sẽ hiển thị sau khi có tài khoản.', '<button class="btn btn-ghost" type="button" id="reloadUsersEmpty">Tải lại</button>')}</td></tr>`;
+                </div>
+            </article>`).join('') : emptyState('👥', 'Chưa có người dùng', 'Danh sách người dùng sẽ hiển thị sau khi có tài khoản.', '<button class="btn btn-ghost" type="button" id="reloadUsersEmpty">Tải lại</button>');
             $('reloadUsersEmpty')?.addEventListener('click', () => loadAccounts().catch(error => showToast(error.message)));
         }
 
         function renderFoods() {
-            $('foodRows').innerHTML = state.foods.length ? state.foods.map((food, index) => `<tr>
-                <td><div class="avatar-row"><div class="avatar">🥗</div><div><div class="primary-text">${escapeHtml(food.Ten)}</div><div class="muted">${escapeHtml(food.KhoiLuongGram || 100)}g • ${escapeHtml(food.LoaiThucPham || 'Chưa phân loại')}</div></div></div></td>
-                <td><strong>${number(food.Calo)}</strong> kcal</td>
-                <td><span class="macro-pill macro-p">${escapeHtml(food.Protein || 0)}g</span></td>
-                <td><span class="macro-pill macro-c">${escapeHtml(food.Carb || 0)}g</span></td>
-                <td><span class="macro-pill macro-f">${escapeHtml(food.ChatBeo || 0)}g</span></td>
-                <td>${Number(food.IsHealthy) === 1 ? '<span class="badge badge-active">Lành mạnh</span>' : '<span class="badge badge-locked">Hạn chế</span>'}</td>
-                <td><div class="actions"><button class="btn btn-ghost btn-sm" data-edit-food="${index}" type="button">Sửa</button><button class="btn btn-danger btn-sm" data-delete-food="${food.ID}" type="button">Xóa</button></div></td>
-            </tr>`).join('') : `<tr><td colspan="7">${emptyState('🥗', 'Chưa có thực phẩm nào', 'Thêm thực phẩm đầu tiên để người dùng ghi nhận bữa ăn.', '<button class="btn" type="button" id="focusFoodForm">Thêm thực phẩm đầu tiên</button>')}</td></tr>`;
+            $('foodRows').innerHTML = state.foods.length ? state.foods.map((food, index) => `<article class="resource-card">
+                <div class="resource-head">
+                    <div class="resource-emoji">🥗</div>
+                    <div style="min-width:0;flex:1">
+                        <div class="primary-text" style="font-size:17px">${escapeHtml(food.Ten)}</div>
+                        <div class="muted">${escapeHtml(food.KhoiLuongGram || 100)}g • ${escapeHtml(food.LoaiThucPham || 'Chưa phân loại')}</div>
+                    </div>
+                    ${Number(food.IsHealthy) === 1 ? '<span class="badge badge-active">Lành mạnh</span>' : '<span class="badge badge-locked">Hạn chế</span>'}
+                </div>
+                <div class="macro-grid">
+                    <div class="macro-box"><span class="muted">Calories</span><strong>${number(food.Calo)}</strong></div>
+                    <div class="macro-box"><span class="muted">Protein</span><strong>${escapeHtml(food.Protein || 0)}g</strong></div>
+                    <div class="macro-box"><span class="muted">Carb</span><strong>${escapeHtml(food.Carb || 0)}g</strong></div>
+                    <div class="macro-box"><span class="muted">Fat</span><strong>${escapeHtml(food.ChatBeo || 0)}g</strong></div>
+                </div>
+                <div class="actions"><button class="btn btn-ghost btn-sm" data-edit-food="${index}" type="button">Sửa</button><button class="btn btn-danger btn-sm" data-delete-food="${food.ID}" type="button">Xóa</button></div>
+            </article>`).join('') : emptyState('🥗', 'Chưa có thực phẩm nào', 'Thêm thực phẩm đầu tiên để người dùng ghi nhận bữa ăn.', '<button class="btn" type="button" id="focusFoodForm">Thêm thực phẩm đầu tiên</button>');
             $('focusFoodForm')?.addEventListener('click', () => $('foodName').focus());
         }
         function renderMedicines() {
-            $('medicineRows').innerHTML = state.medicines.length ? state.medicines.map((medicine, index) => `<tr>
-                <td><div class="avatar-row"><div class="avatar">💊</div><div><div class="primary-text">${escapeHtml(medicine.TenThuoc)}</div><div class="muted">${escapeHtml(medicine.MoTa || medicine.GhiChu || '')}</div></div></div></td>
-                <td>${escapeHtml(medicine.HoatChat || 'Chưa cập nhật')}</td>
-                <td>${escapeHtml(medicine.LieuLuong || '')} ${escapeHtml(medicine.DonVi || '')}</td>
-                <td><span class="tag tag-lavender">${escapeHtml(medicine.NhomThuoc || 'Khác')}</span></td>
-                <td><span class="badge badge-info">${escapeHtml(medicine.TrangThai || 'Hoạt động')}</span></td>
-                <td><div class="actions"><button class="btn btn-ghost btn-sm" data-edit-medicine="${index}" type="button">Sửa</button><button class="btn btn-danger btn-sm" data-delete-medicine="${medicine.ID}" type="button">Xóa</button></div></td>
-            </tr>`).join('') : `<tr><td colspan="6">${emptyState('💊', 'Chưa có thuốc nào', 'Thêm thuốc đầu tiên để người dùng tìm kiếm và lập lịch uống thuốc.', '<button class="btn" type="button" id="focusMedicineForm">Thêm thuốc đầu tiên</button>')}</td></tr>`;
+            $('medicineRows').innerHTML = state.medicines.length ? state.medicines.map((medicine, index) => `<article class="resource-card">
+                <div class="resource-head">
+                    <div class="resource-emoji">💊</div>
+                    <div style="min-width:0;flex:1">
+                        <div class="primary-text" style="font-size:17px">${escapeHtml(medicine.TenThuoc)}</div>
+                        <div class="muted">${escapeHtml(medicine.MoTa || medicine.GhiChu || 'Chưa có mô tả')}</div>
+                    </div>
+                    <span class="badge badge-info">${escapeHtml(medicine.TrangThai || 'Hoạt động')}</span>
+                </div>
+                <div class="info-grid">
+                    <div class="info-row"><div class="info-label">Hoạt chất</div><div class="info-value">${escapeHtml(medicine.HoatChat || 'Chưa cập nhật')}</div></div>
+                    <div class="info-row"><div class="info-label">Nhóm thuốc</div><div class="info-value"><span class="tag tag-lavender">${escapeHtml(medicine.NhomThuoc || 'Khác')}</span></div></div>
+                    <div class="info-row"><div class="info-label">Liều dùng</div><div class="info-value">${escapeHtml(medicine.LieuLuong || 'Chưa cập nhật')} ${escapeHtml(medicine.DonVi || '')}</div></div>
+                    <div class="info-row"><div class="info-label">Cảnh báo</div><div class="info-value">${escapeHtml(medicine.CanhBao || 'Chưa có cảnh báo')}</div></div>
+                </div>
+                <div class="actions"><button class="btn btn-ghost btn-sm" data-edit-medicine="${index}" type="button">Sửa</button><button class="btn btn-danger btn-sm" data-delete-medicine="${medicine.ID}" type="button">Xóa</button></div>
+            </article>`).join('') : emptyState('💊', 'Chưa có thuốc nào', 'Thêm thuốc đầu tiên để người dùng tìm kiếm và lập lịch uống thuốc.', '<button class="btn" type="button" id="focusMedicineForm">Thêm thuốc đầu tiên</button>');
             $('focusMedicineForm')?.addEventListener('click', () => $('medicineName').focus());
         }
 
@@ -1524,14 +1713,6 @@
                 ['🔥', 'Tài khoản có vận động', state.accounts.filter(a => Number(a.stats?.activities || 0) > 0).length, 'Đã ghi nhận hoạt động'],
                 ['📋', 'Nguồn dữ liệu', 'activity/stats', 'Giữ nguyên API hiện có'],
             ].map(([icon, title, value, note]) => `<div class="stat-card tone-blue"><div class="stat-icon">${icon}</div><div class="stat-value">${number(value)}</div><div class="stat-label">${title}</div><div class="stat-note">${note}</div></div>`).join('');
-            const totalMeals = state.accounts.reduce((sum, account) => sum + Number(account.stats?.meals || 0), 0);
-            const totalWater = state.accounts.reduce((sum, account) => sum + Number(account.stats?.water_logs || 0), 0);
-            const totalMeds = state.accounts.reduce((sum, account) => sum + Number(account.stats?.medicines || 0), 0);
-            $('reportSummary').innerHTML = [
-                ['🥗', 'Bữa ăn', totalMeals, 'Tổng bản ghi bữa ăn'],
-                ['💧', 'Uống nước', totalWater, 'Tổng lần ghi nhận nước'],
-                ['💊', 'Thuốc', totalMeds, 'Tổng lịch sử thuốc'],
-            ].map(([icon, title, value, note]) => `<div class="stat-card tone-mint"><div class="stat-icon">${icon}</div><div class="stat-value">${number(value)}</div><div class="stat-label">${title}</div><div class="stat-note">${note}</div></div>`).join('');
         }
 
         function openDrawer() {
@@ -1636,7 +1817,7 @@
             $('generatedAt').textContent = `Cập nhật lúc ${dateTime(data.generated_at)} • Múi giờ Asia/Ho_Chi_Minh`;
             state.alerts = data.alerts || [];
             renderOverview(data.overview || []);
-            renderFeatures(data.features || []);
+            renderSystemActivity(data.features || []);
             renderNotifications(data.notifications || {});
             renderWeekly(data.weekly || []);
             renderRiskSummary();
@@ -1644,7 +1825,7 @@
             renderAlertTable();
         }
         async function loadAccounts() {
-            $('accountRows').innerHTML = skeletonRows(5);
+            $('accountRows').innerHTML = '<div class="loading-skeleton"><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div>';
             const params = new URLSearchParams({ per_page: '50' });
             if (state.q) params.set('q', state.q);
             if (state.status) params.set('status', state.status);
@@ -1666,11 +1847,10 @@
         }
         async function reloadAll() {
             try {
-                await Promise.all([loadAccounts(), loadStats()]);
                 state.foods = [];
                 state.medicines = [];
-                if ($('page-foods').classList.contains('active')) await loadFoods();
-                if ($('page-medicines').classList.contains('active')) await loadMedicines();
+                await Promise.all([loadAccounts(), loadFoods(), loadMedicines()]);
+                await loadStats();
             } catch (error) {
                 showToast(error.message);
             }
@@ -1686,7 +1866,7 @@
         }
         function fillFoodForm(food) {
             state.editingFoodId = food.ID;
-            $('foodEditorTitle').innerHTML = `<i class="ti ti-apple"></i>Sửa thực phẩm #${food.ID}`;
+            $('foodEditorTitle').innerHTML = '<i class="ti ti-apple"></i>Sửa thực phẩm';
             $('foodName').value = food.Ten || '';
             $('foodUnit').value = food.DonVi || 'Gram';
             $('foodCalories').value = food.Calo ?? '';
@@ -1707,7 +1887,7 @@
         }
         function fillMedicineForm(medicine) {
             state.editingMedicineId = medicine.ID;
-            $('medicineEditorTitle').innerHTML = `<i class="ti ti-pill"></i>Sửa thuốc #${medicine.ID}`;
+            $('medicineEditorTitle').innerHTML = '<i class="ti ti-pill"></i>Sửa thuốc';
             $('medicineName').value = medicine.TenThuoc || '';
             $('medicineDose').value = medicine.LieuLuong || '';
             $('medicineUnit').value = medicine.DonVi || '';
