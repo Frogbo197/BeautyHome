@@ -256,6 +256,17 @@ class AuthController extends Controller
         if (empty($data['reset_code'])) {
             $code = (string) random_int(100000, 999999);
             Cache::put($cacheKey, Hash::make($code), now()->addMinutes(10));
+            $testMode = filter_var(env('PASSWORD_RESET_TEST_MODE', false), FILTER_VALIDATE_BOOLEAN);
+
+            if ($testMode) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Email da duoc xac minh. Vui long nhap mat khau moi.',
+                    'requires_code' => true,
+                    'debug_reset_code' => $code,
+                    'test_mode' => true,
+                ]);
+            }
 
             try {
                 Mail::raw(
