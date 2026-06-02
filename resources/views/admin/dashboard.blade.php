@@ -662,6 +662,16 @@
 
     <script>
         const state = { q: '', status: '', loadingAccount: false, selectedAccount: null, editingFoodId: null, editingMedicineId: null };
+        const urlParams = new URLSearchParams(window.location.search);
+        const tokenFromUrl = urlParams.get('admin_token') || urlParams.get('token');
+        if (tokenFromUrl) {
+            localStorage.setItem('admin_api_token', tokenFromUrl);
+            urlParams.delete('admin_token');
+            urlParams.delete('token');
+            const cleanUrl = `${window.location.pathname}${urlParams.toString() ? `?${urlParams}` : ''}${window.location.hash || ''}`;
+            history.replaceState(null, '', cleanUrl);
+        }
+        const adminApiToken = localStorage.getItem('admin_api_token') || '';
         const adminUserId = localStorage.getItem('admin_user_id') || localStorage.getItem('user_id') || '1';
         const overviewEl = document.getElementById('overview');
         const accountRowsEl = document.getElementById('accountRows');
@@ -734,6 +744,7 @@
             const response = await fetch(url, {
                 headers: {
                     Accept: 'application/json',
+                    ...(adminApiToken ? { 'X-Admin-Token': adminApiToken } : {}),
                     'X-Admin-User-Id': adminUserId,
                     ...(options.body ? { 'Content-Type': 'application/json' } : {}),
                     ...(options.headers || {}),
