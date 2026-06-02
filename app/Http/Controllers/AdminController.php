@@ -32,7 +32,7 @@ class AdminController extends Controller
                     ['label' => 'Tai khoan bi khoa', 'value' => $accountStats['locked'], 'note' => 'Co the mo lai tu bang nguoi dung', 'tone' => 'rose'],
                     ['label' => 'Thong bao', 'value' => $notificationStats['total'], 'note' => $notificationStats['unread'] . ' thong bao chua doc', 'tone' => 'lavender'],
                     ['label' => 'Canh bao suc khoe', 'value' => count($alerts), 'note' => 'Can admin xem lai va gui nhac nho', 'tone' => count($alerts) ? 'rose' : 'mint'],
-                    ['label' => 'Ho so suc khoe', 'value' => $this->countTable('hosonguoidung'), 'note' => $this->countTable('diemsuckhoe') . ' luot cham diem', 'tone' => 'sky'],
+                    ['label' => 'Ho so nguoi dung', 'value' => $this->countTable('hosonguoidung'), 'note' => $this->countTable('hososuckhoe') . ' ho so suc khoe', 'tone' => 'sky'],
                 ],
                 'features' => $this->featureStats(),
                 'weekly' => $this->weeklyStats($today),
@@ -825,6 +825,21 @@ class AdminController extends Controller
                 'label' => 'Chat AI',
                 'value' => $this->countTable('chat_history'),
                 'note' => 'Lượt hội thoại đã lưu',
+            ],
+            [
+                'label' => 'Ho so suc khoe',
+                'value' => $this->countTable('hososuckhoe'),
+                'note' => $this->countTable('chisosuckhoe') . ' ban ghi chi so suc khoe',
+            ],
+            [
+                'label' => 'Thong bao',
+                'value' => $this->countTable('thongbao'),
+                'note' => $this->countTable('nhacnho') . ' cau hinh nhac nho',
+            ],
+            [
+                'label' => 'Canh bao bat thuong',
+                'value' => $this->countTable('risk_events'),
+                'note' => $this->countTable('risk_rules') . ' rule dang quan ly',
             ],
         ];
     }
