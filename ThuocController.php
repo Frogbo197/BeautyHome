@@ -7,6 +7,7 @@ use App\Service\HealthRiskEngineService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
@@ -24,10 +25,18 @@ class ThuocController extends Controller
             'donVi' => 'nullable|string|max:50',
             'ghiChu' => 'nullable|string',
             'loaiThuoc' => 'nullable|string|max:100',
+            'dangThuoc' => 'nullable|string|max:100',
             'iconThuoc' => 'nullable|string|max:20',
             'soLanMoiNgay' => 'nullable|integer|min:1|max:12',
             'allow_duplicate' => 'nullable|boolean',
         ]);
+
+        if (!$this->isAllowedMedicineName((string) $data['tenThuoc'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui long chon thuoc tu danh muc goi y',
+            ], 422);
+        }
 
         $time = $this->normalizeDateTime((string) $data['thoiGian']);
         $thuocId = $this->upsertMedicineMaster($data, $time);
@@ -55,7 +64,8 @@ class ThuocController extends Controller
             'DonVi' => $data['donVi'] ?? '',
             'LieuLuong' => $data['lieuLuong'],
             'GhiChu' => $data['ghiChu'] ?? '',
-            'LoaiThuoc' => $data['loaiThuoc'] ?? 'Vien uong',
+            'LoaiThuoc' => $data['loaiThuoc'] ?? 'Khac',
+            'DangThuoc' => $data['dangThuoc'] ?? 'Vien uong',
             'IconThuoc' => $data['iconThuoc'] ?? 'pill',
             'TanSuat' => $data['soLanMoiNgay'] ?? 1,
             'NgayCapNhat' => now('Asia/Ho_Chi_Minh'),
@@ -141,58 +151,185 @@ class ThuocController extends Controller
 
     public function capNhatThuoc(Request $request, int $id)
     {
-        $data = $request->validate([
-            'tenThuoc' => 'nullable|string|max:255',
-            'lieuLuong' => 'nullable|string|max:100',
-            'donVi' => 'nullable|string|max:50',
-            'thoiGian' => 'nullable',
-            'ghiChu' => 'nullable|string',
-            'loaiThuoc' => 'nullable|string|max:100',
-            'iconThuoc' => 'nullable|string|max:20',
-            'soLanMoiNgay' => 'nullable|integer|min:1|max:12',
-            'trangThai' => ['nullable', 'string', Rule::in(self::STATUSES)],
-        ]);
+        try {
+            $request->replace($this->normalizeMedicineUpdateInput($request));
 
-        $row = DB::table('lichdungthuoc')->where('ID', $id)->first();
-        if (!$row) {
-            return response()->json(['success' => false, 'message' => 'Khong tim thay lich thuoc'], 404);
-        }
+            $data = $request->validate([
+                'tenThuoc' => 'nullable|string|max:255',
+                'lieuLuong' => 'nullable|string|max:100',
+                'donVi' => 'nullable|string|max:50',
+                'thoiGian' => 'nullable',
+                'ghiChu' => 'nullable|string',
+                'loaiThuoc' => 'nullable|string|max:100',
+                'dangThuoc' => 'nullable|string|max:100',
+                'iconThuoc' => 'nullable|string|max:20',
+                'soLanMoiNgay' => 'nullable|integer|min:1|max:12',
+                'trangThai' => ['nullable', 'string', Rule::in(self::STATUSES)],
+                'khung_gios' => 'nullable|array|min:1|max:12',
+                'khung_gios.*' => 'required|date_format:H:i',
+            ]);
 
-        if (!empty($data['tenThuoc'])) {
-            DB::table('thuoc')->where('ID', $row->ThuocID)->update(
-                $this->onlyExistingColumns('thuoc', [
-                    'TenThuoc' => $data['tenThuoc'],
-                    'LieuLuong' => $data['lieuLuong'] ?? $row->LieuLuong ?? '',
-                    'DonVi' => $data['donVi'] ?? $row->DonVi ?? '',
-                    'SoLanMoiNgay' => $data['soLanMoiNgay'] ?? null,
+            $row = DB::table('lichdungthuoc')->where('ID', $id)->first();
+            if (!$row) {
+                return response()->json(['success' => false, 'message' => 'Khong tim thay lich thuoc'], 404);
+            }
+
+            $targetThuocId = $this->medicineIdForUpdate($data, $row);
+            $hasKhungGios = isset($data['khung_gios']) && is_array($data['khung_gios']) && count($data['khung_gios']) > 0;
+            if (! $hasKhungGios) {
+                DB::transaction(function () use ($data, $row, $id, $targetThuocId) {
+                    if ($targetThuocId !== null) {
+                        $this->updateMedicineMasterForSchedule($targetThuocId, $data);
+                    }
+
+                    DB::table('lichdungthuoc')->where('ID', $id)->update(
+                        $this->onlyExistingColumns('lichdungthuoc', [
+                            'ThuocID' => $targetThuocId,
+                            'TrangThai' => $data['trangThai'] ?? null,
+                            'DonVi' => $data['donVi'] ?? null,
+                            'LieuLuong' => $data['lieuLuong'] ?? null,
+                            'GhiChu' => $data['ghiChu'] ?? null,
+                            'LoaiThuoc' => $data['loaiThuoc'] ?? null,
+                            'DangThuoc' => $data['dangThuoc'] ?? null,
+                            'IconThuoc' => $data['iconThuoc'] ?? null,
+                            'TanSuat' => $data['soLanMoiNgay'] ?? null,
+                            'ThoiGian' => !empty($data['thoiGian'])
+                                ? $this->normalizeDateTime((string) $data['thoiGian'])
+                                : null,
+                            'NgayCapNhat' => now('Asia/Ho_Chi_Minh'),
+                        ], true)
+                    );
+                });
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Cap nhat thong tin thuoc thanh cong!',
+                    'data' => $this->findScheduleRow($id),
+                ], 200);
+            }
+
+            $khungGios = array_values(array_unique($data['khung_gios']));
+            sort($khungGios);
+            $encodedKhungGios = json_encode($khungGios, JSON_UNESCAPED_UNICODE);
+            $dateSource = (string) ($data['thoiGian'] ?? $row->ThoiGian ?? now('Asia/Ho_Chi_Minh')->toDateTimeString());
+            $date = Carbon::parse(str_replace('T', ' ', $dateSource), 'Asia/Ho_Chi_Minh')->toDateString();
+            $updatedIds = [];
+
+            DB::transaction(function () use ($data, $row, $id, $khungGios, $encodedKhungGios, $date, $targetThuocId, &$updatedIds) {
+                if ($targetThuocId !== null) {
+                    $this->updateMedicineMasterForSchedule($targetThuocId, array_merge($data, [
+                        'soLanMoiNgay' => count($khungGios),
+                    ]));
+                }
+
+                $basePayload = $this->onlyExistingColumns('lichdungthuoc', [
+                    'ThuocID' => $targetThuocId,
+                    'TrangThai' => $data['trangThai'] ?? null,
+                    'DonVi' => $data['donVi'] ?? null,
+                    'LieuLuong' => $data['lieuLuong'] ?? null,
                     'GhiChu' => $data['ghiChu'] ?? null,
-                    'NhomThuoc' => $data['loaiThuoc'] ?? null,
+                    'LoaiThuoc' => $data['loaiThuoc'] ?? null,
+                    'DangThuoc' => $data['dangThuoc'] ?? null,
                     'IconThuoc' => $data['iconThuoc'] ?? null,
-                ])
-            );
+                    'TanSuat' => count($khungGios),
+                    'khung_gios' => $encodedKhungGios,
+                    'NgayCapNhat' => now('Asia/Ho_Chi_Minh'),
+                ], true);
+
+                $existingRows = DB::table('lichdungthuoc')
+                    ->where('NguoiDungID', $row->NguoiDungID)
+                    ->where('ThuocID', $row->ThuocID)
+                    ->whereDate('ThoiGian', $date)
+                    ->where(function ($query) {
+                        $query->whereNull('TrangThai')->orWhere('TrangThai', '<>', 'da_huy');
+                    })
+                    ->orderBy('ThoiGian')
+                    ->get();
+
+                if ($existingRows->isEmpty()) {
+                    $existingRows = collect([$row]);
+                }
+
+                $rowsByTime = $existingRows->keyBy(fn ($item) => substr((string) $item->ThoiGian, 11, 5));
+                $unusedRows = $existingRows->values();
+                $usedRowIds = [];
+
+                foreach ($khungGios as $clock) {
+                    $target = $rowsByTime->get($clock);
+                    if (!$target) {
+                        $target = $unusedRows->first(fn ($item) => !in_array((int) $item->ID, $usedRowIds, true));
+                    }
+
+                    $schedulePayload = array_merge($basePayload, $this->onlyExistingColumns('lichdungthuoc', [
+                        'ThoiGian' => "{$date} {$clock}:00",
+                    ]));
+
+                    if ($target) {
+                        DB::table('lichdungthuoc')->where('ID', $target->ID)->update($schedulePayload);
+                        $usedRowIds[] = (int) $target->ID;
+                        $updatedIds[] = (int) $target->ID;
+                        continue;
+                    }
+
+                    $insertPayload = array_merge($schedulePayload, $this->onlyExistingColumns('lichdungthuoc', [
+                        'NguoiDungID' => $row->NguoiDungID,
+                        'ThuocID' => $targetThuocId ?? $row->ThuocID,
+                        'TrangThai' => $data['trangThai'] ?? 'can_uong',
+                        'DonVi' => $data['donVi'] ?? $row->DonVi ?? '',
+                        'LieuLuong' => $data['lieuLuong'] ?? $row->LieuLuong ?? '',
+                        'GhiChu' => $data['ghiChu'] ?? $row->GhiChu ?? '',
+                        'LoaiThuoc' => $data['loaiThuoc'] ?? $row->LoaiThuoc ?? null,
+                        'DangThuoc' => $data['dangThuoc'] ?? $row->DangThuoc ?? null,
+                        'IconThuoc' => $data['iconThuoc'] ?? $row->IconThuoc ?? null,
+                        'NgayTao' => now('Asia/Ho_Chi_Minh'),
+                    ], true));
+                    $updatedIds[] = (int) DB::table('lichdungthuoc')->insertGetId($insertPayload);
+                }
+
+                $obsoleteIds = $existingRows
+                    ->pluck('ID')
+                    ->map(fn ($value) => (int) $value)
+                    ->diff($updatedIds)
+                    ->values();
+
+                if ($obsoleteIds->isNotEmpty() && Schema::hasColumn('lichdungthuoc', 'TrangThai')) {
+                    DB::table('lichdungthuoc')
+                        ->whereIn('ID', $obsoleteIds)
+                        ->update($this->onlyExistingColumns('lichdungthuoc', [
+                            'TrangThai' => 'da_huy',
+                            'NgayCapNhat' => now('Asia/Ho_Chi_Minh'),
+                        ]));
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật khung giờ uống thuốc thành công!',
+                'data' => collect($updatedIds)
+                    ->unique()
+                    ->values()
+                    ->map(fn ($scheduleId) => $this->findScheduleRow((int) $scheduleId))
+                    ->filter()
+                    ->values(),
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            throw $exception;
+        } catch (\Illuminate\Http\Exceptions\HttpResponseException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            Log::error('medicine.schedule.update_failed', [
+                'schedule_id' => $id,
+                'payload' => $request->all(),
+                'message' => $exception->getMessage(),
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Khong the cap nhat khung gio uong thuoc. Vui long thu lai.',
+            ], 500);
         }
-
-        $payload = $this->onlyExistingColumns('lichdungthuoc', [
-            'ThoiGian' => array_key_exists('thoiGian', $data) ? $this->normalizeDateTime((string) $data['thoiGian']) : null,
-            'TrangThai' => $data['trangThai'] ?? null,
-            'DonVi' => $data['donVi'] ?? null,
-            'LieuLuong' => $data['lieuLuong'] ?? null,
-            'GhiChu' => $data['ghiChu'] ?? null,
-            'LoaiThuoc' => $data['loaiThuoc'] ?? null,
-            'IconThuoc' => $data['iconThuoc'] ?? null,
-            'TanSuat' => $data['soLanMoiNgay'] ?? null,
-            'NgayCapNhat' => now('Asia/Ho_Chi_Minh'),
-        ], true);
-
-        if (!empty($payload)) {
-            DB::table('lichdungthuoc')->where('ID', $id)->update($payload);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Da cap nhat thuoc',
-            'data' => $this->findScheduleRow($id),
-        ]);
     }
 
     public function xoaThuoc($id)
@@ -343,8 +480,9 @@ class ThuocController extends Controller
             ->values()
             ->map(fn ($item) => [
                 'TenThuoc' => $this->valueOf($item, 'TenThuoc', ''),
-                'LoaiThuoc' => $this->valueOf($item, 'NhomThuoc', 'Vien uong'),
-                'NhomThuoc' => $this->valueOf($item, 'NhomThuoc', 'Vien uong'),
+                'LoaiThuoc' => $this->valueOf($item, 'NhomThuoc', 'Khac'),
+                'NhomThuoc' => $this->valueOf($item, 'NhomThuoc', 'Khac'),
+                'DangThuoc' => $this->valueOf($item, 'DangThuoc', ''),
                 'HoatChat' => $this->valueOf($item, 'HoatChat', ''),
                 'IconThuoc' => $this->valueOf($item, 'IconThuoc', 'pill'),
                 'DonVi' => $this->valueOf($item, 'DonVi', 'mg'),
@@ -375,6 +513,79 @@ class ThuocController extends Controller
         ]);
     }
 
+    private function medicineIdForUpdate(array $data, $row): ?int
+    {
+        $currentId = isset($row->ThuocID) ? (int) $row->ThuocID : null;
+        if ($currentId !== null && $currentId <= 0) {
+            $currentId = null;
+        }
+
+        $name = trim((string) ($data['tenThuoc'] ?? ''));
+        if ($name === '' || ! Schema::hasTable('thuoc')) {
+            return $currentId;
+        }
+
+        $existing = DB::table('thuoc')->where('TenThuoc', $name)->first();
+        if ($existing) {
+            return (int) $existing->ID;
+        }
+
+        return (int) DB::table('thuoc')->insertGetId($this->onlyExistingColumns('thuoc', [
+            'TenThuoc' => $name,
+            'MoTa' => $data['moTa'] ?? '',
+            'TacDungPhu' => $data['tacDungPhu'] ?? '',
+            'LieuLuong' => $data['lieuLuong'] ?? $row->LieuLuong ?? '',
+            'DonVi' => $data['donVi'] ?? $row->DonVi ?? '',
+            'SoLanMoiNgay' => $data['soLanMoiNgay'] ?? $row->TanSuat ?? 1,
+            'GhiChu' => $data['ghiChu'] ?? $row->GhiChu ?? '',
+            'CanhBao' => '',
+            'ThoiGian' => $data['thoiGian'] ?? $row->ThoiGian ?? null,
+            'TrangThai' => $data['trangThai'] ?? $row->TrangThai ?? 'can_uong',
+            'HoatChat' => '',
+            'NhomThuoc' => $data['loaiThuoc'] ?? $row->LoaiThuoc ?? '',
+            'DangThuoc' => $data['dangThuoc'] ?? $row->DangThuoc ?? 'Vien uong',
+            'IconThuoc' => $data['iconThuoc'] ?? $row->IconThuoc ?? 'pill',
+        ], true));
+    }
+
+    private function updateMedicineMasterForSchedule(int $thuocId, array $data): void
+    {
+        if (! Schema::hasTable('thuoc')) {
+            return;
+        }
+
+        $payload = [];
+        if (!empty($data['tenThuoc'])) {
+            $payload['TenThuoc'] = $data['tenThuoc'];
+        }
+        if (array_key_exists('lieuLuong', $data)) {
+            $payload['LieuLuong'] = $data['lieuLuong'];
+        }
+        if (array_key_exists('donVi', $data)) {
+            $payload['DonVi'] = $data['donVi'];
+        }
+        if (array_key_exists('soLanMoiNgay', $data)) {
+            $payload['SoLanMoiNgay'] = $data['soLanMoiNgay'];
+        }
+        if (array_key_exists('ghiChu', $data) && !empty($data['tenThuoc'])) {
+            $payload['GhiChu'] = $data['ghiChu'];
+        }
+        if (array_key_exists('loaiThuoc', $data)) {
+            $payload['NhomThuoc'] = $data['loaiThuoc'];
+        }
+        if (array_key_exists('dangThuoc', $data)) {
+            $payload['DangThuoc'] = $data['dangThuoc'];
+        }
+        if (array_key_exists('iconThuoc', $data)) {
+            $payload['IconThuoc'] = $data['iconThuoc'];
+        }
+
+        $payload = $this->onlyExistingColumns('thuoc', $payload, true);
+        if (!empty($payload)) {
+            DB::table('thuoc')->where('ID', $thuocId)->update($payload);
+        }
+    }
+
     private function upsertMedicineMaster(array $data, string $time): int
     {
         $thuoc = DB::table('thuoc')->where('TenThuoc', $data['tenThuoc'])->first();
@@ -395,6 +606,7 @@ class ThuocController extends Controller
             'TrangThai' => 'can_uong',
             'HoatChat' => '',
             'NhomThuoc' => $data['loaiThuoc'] ?? '',
+            'DangThuoc' => $data['dangThuoc'] ?? 'Vien uong',
             'IconThuoc' => $data['iconThuoc'] ?? 'pill',
         ]));
     }
@@ -432,6 +644,7 @@ class ThuocController extends Controller
             'LieuLuong' => $row->LieuLuong ?? '',
             'GhiChu' => $row->GhiChu ?? '',
             'LoaiThuoc' => $row->LoaiThuoc ?? 'Vien uong',
+            'DangThuoc' => $row->DangThuoc ?? 'Vien uong',
             'IconThuoc' => $row->IconThuoc ?? 'pill',
             'TanSuat' => $row->TanSuat ?? 1,
             'NgayTao' => now('Asia/Ho_Chi_Minh'),
@@ -505,8 +718,10 @@ class ThuocController extends Controller
         foreach ([
             'ThoiGianUongThucTe',
             'LoaiThuoc',
+            'DangThuoc',
             'IconThuoc',
             'TanSuat',
+            'khung_gios',
         ] as $column) {
             if (Schema::hasColumn('lichdungthuoc', $column)) {
                 $select[] = "lichdungthuoc.$column";
@@ -527,6 +742,7 @@ class ThuocController extends Controller
             'TenThuoc',
             Schema::hasColumn('thuoc', 'HoatChat') ? 'HoatChat' : null,
             Schema::hasColumn('thuoc', 'NhomThuoc') ? 'NhomThuoc' : null,
+            Schema::hasColumn('thuoc', 'DangThuoc') ? 'DangThuoc' : null,
             Schema::hasColumn('thuoc', 'IconThuoc') ? 'IconThuoc' : null,
             Schema::hasColumn('thuoc', 'DonVi') ? 'DonVi' : null,
             Schema::hasColumn('thuoc', 'LieuLuong') ? 'LieuLuong' : null,
@@ -538,6 +754,24 @@ class ThuocController extends Controller
     private function popularMedicineCatalog(): array
     {
         return config('medicine_catalog.items', []);
+    }
+
+    private function isAllowedMedicineName(string $name): bool
+    {
+        $name = trim($name);
+        if ($name === '') {
+            return false;
+        }
+
+        $needle = mb_strtolower($name);
+        foreach ($this->popularMedicineCatalog() as $item) {
+            if (mb_strtolower((string) $this->valueOf($item, 'TenThuoc', '')) === $needle) {
+                return true;
+            }
+        }
+
+        return Schema::hasTable('thuoc')
+            && DB::table('thuoc')->where('TenThuoc', $name)->exists();
     }
 
     private function medicineSearchSortKey($item, string $q): string
@@ -613,6 +847,54 @@ class ThuocController extends Controller
             $cursor->subDay();
         }
         return $streak;
+    }
+
+    private function normalizeMedicineUpdateInput(Request $request): array
+    {
+        $input = $request->all();
+        $aliases = [
+            'tenThuoc' => ['ten_thuoc'],
+            'lieuLuong' => ['lieu_luong', 'lieu_luong_goc'],
+            'donVi' => ['don_vi'],
+            'thoiGian' => ['thoi_gian', 'gio_uong'],
+            'ghiChu' => ['ghi_chu', 'ghi_chu_rieng'],
+            'loaiThuoc' => ['loai_thuoc'],
+            'dangThuoc' => ['dang_thuoc'],
+            'iconThuoc' => ['icon_thuoc'],
+            'soLanMoiNgay' => ['so_lan_moi_ngay', 'tan_suat'],
+            'trangThai' => ['trang_thai'],
+            'khung_gios' => ['khungGios', 'cac_khung_gio', 'cacKhungGio', 'gio_uongs'],
+        ];
+
+        foreach ($aliases as $target => $sources) {
+            if (array_key_exists($target, $input) && $input[$target] !== null) {
+                continue;
+            }
+
+            foreach ($sources as $source) {
+                if (array_key_exists($source, $input)) {
+                    $input[$target] = $input[$source];
+                    break;
+                }
+            }
+        }
+
+        if (array_key_exists('khung_gios', $input) && $input['khung_gios'] !== null) {
+            $rawKhungGios = $input['khung_gios'];
+            if (is_string($rawKhungGios)) {
+                $decoded = json_decode($rawKhungGios, true);
+                $rawKhungGios = is_array($decoded) ? $decoded : explode(',', $rawKhungGios);
+            } elseif (! is_array($rawKhungGios)) {
+                $rawKhungGios = [$rawKhungGios];
+            }
+
+            $input['khung_gios'] = array_values(array_filter(
+                array_map(fn ($value) => trim((string) $value), $rawKhungGios),
+                fn ($value) => $value !== ''
+            ));
+        }
+
+        return $input;
     }
 
     private function onlyExistingColumns(string $table, array $payload, bool $skipNull = false): array

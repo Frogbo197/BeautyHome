@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Schema;
 
 class AuthController extends Controller
 {
@@ -47,20 +48,18 @@ class AuthController extends Controller
         }
 
         // CREATE ACCOUNT
-        $userId = DB::table('taikhoan')
-            ->insertGetId([
+        $accountPayload = [
+            'Email' => $request->email,
+            'MatKhauHash' => Hash::make($request->password),
+            'TrangThaiHoatDong' => 1,
+            'LanDangNhapCuoi' => now(),
+            'NgayTao' => now(),
+        ];
+        if (Schema::hasColumn('taikhoan', 'is_blocked')) {
+            $accountPayload['is_blocked'] = false;
+        }
 
-                'Email' => $request->email,
-
-                'MatKhauHash' =>
-                    Hash::make($request->password),
-
-                'TrangThaiHoatDong' => 1,
-
-                'LanDangNhapCuoi' => now(),
-
-                'NgayTao' => now(),
-            ]);
+        $userId = DB::table('taikhoan')->insertGetId($accountPayload);
 
         // CREATE PROFILE
         DB::table('hosonguoidung')
@@ -121,7 +120,14 @@ class AuthController extends Controller
             ], 404);
         }
 
-        if ((int) ($user->TrangThaiHoatDong ?? 1) !== 1) {
+        $isBlocked = (bool) ($user->is_blocked ?? false)
+            || (int) ($user->TrangThaiHoatDong ?? 1) !== 1;
+
+        if ($isBlocked) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tài khoản của bạn đã bị khóa do vi phạm dữ liệu',
+            ], 403);
 
             return response()->json([
 
