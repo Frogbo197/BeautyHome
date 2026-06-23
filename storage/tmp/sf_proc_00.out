@@ -1,0 +1,7 @@
+[Fri May 22 13:09:26 2026] 127.0.0.1:58750 [GET] URI: /admin
+[Fri May 22 13:09:53 2026] 127.0.0.1:57000 [GET] URI: /admin
+[Fri May 22 13:09:53 2026] 127.0.0.1:59335 [GET] URI: /api/admin/stats
+[Fri May 22 13:10:02 2026] 127.0.0.1:63112 [GET] URI: /api/admin/accounts
+[Fri May 22 13:10:44 2026] 127.0.0.1:58113 [GET] URI: /admin
+[Fri May 22 13:10:44 2026] 127.0.0.1:55790 [GET] URI: /api/admin/stats
+[Fri May 22 13:10:52 2026] 127.0.0.1:64265 [GET] URI: /api/admin/accounts
