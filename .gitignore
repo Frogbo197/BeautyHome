@@ -8,9 +8,18 @@ app.zip
 database.zip
 
 storage/logs/*
+!storage/logs/.gitkeep
+
 storage/framework/cache/*
+!storage/framework/cache/.gitkeep
+!storage/framework/cache/data/
+!storage/framework/cache/data/.gitkeep
+
 storage/framework/sessions/*
+!storage/framework/sessions/.gitkeep
+
 storage/framework/views/*
+!storage/framework/views/.gitkeep
 
 .idea
 .vscode
